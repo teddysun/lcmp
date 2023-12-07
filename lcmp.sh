@@ -328,10 +328,7 @@ if check_sys rhel; then
         firewall-cmd --permanent --add-service=https --zone="${default_zone}" >/dev/null 2>&1
         firewall-cmd --permanent --add-service=http --zone="${default_zone}" >/dev/null 2>&1
         # Enabled udp 443 port for Caddy HTTP/3 feature
-        if ! grep "udp" /usr/lib/firewalld/services/https.xml; then
-            lnum=$(sed -n '/<port/=' /usr/lib/firewalld/services/https.xml)
-            sed -i "${lnum}a\  <port protocol=\"udp\" port=\"443\"/>" /usr/lib/firewalld/services/https.xml
-        fi
+        firewall-cmd --permanent --zone="${default_zone}" --add-port=443/udp >/dev/null 2>&1
         firewall-cmd --reload >/dev/null 2>&1
         sed -i 's@AllowZoneDrifting=yes@AllowZoneDrifting=no@' /etc/firewalld/firewalld.conf
         _error_detect "systemctl restart firewalld"
@@ -346,6 +343,7 @@ elif check_sys debian || check_sys ubuntu; then
     if ufw status >/dev/null 2>&1; then
         _error_detect "ufw allow http"
         _error_detect "ufw allow https"
+        _error_detect "ufw allow 443/udp"
     else
         _warn "ufw looks like not running, skip setting up firewall"
     fi
