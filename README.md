@@ -164,6 +164,6 @@ Please feel free to report any bugs or issues to us, email to: i@teddysun.com or
 
 ## License
 
-Copyright (C) 2023 [Teddysun](https://teddysun.com/)
+Copyright (C) 2023 - 2024 [Teddysun](https://teddysun.com/)
 
 Licensed under the [GPLv3](LICENSE) License.
