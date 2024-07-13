@@ -26,7 +26,6 @@ And all things will be done in a few minutes.
 
 ## Supported System
 
-- Enterprise Linux 7 (CentOS 7, RHEL 7)
 - Enterprise Linux 8 (CentOS Stream 8, RHEL 8, Rocky Linux 8, AlmaLinux 8, Oracle Linux 8)
 - Enterprise Linux 9 (CentOS Stream 9, RHEL 9, Rocky Linux 9, AlmaLinux 9, Oracle Linux 9)
 - Debian 10
@@ -34,6 +33,7 @@ And all things will be done in a few minutes.
 - Debian 12
 - Ubuntu 20.04
 - Ubuntu 22.04
+- Ubuntu 24.04
 
 ## System requirements
 
@@ -53,7 +53,7 @@ And all things will be done in a few minutes.
 
 ## Installation
 
-- If your server's OS: Enterprise Linux 7 / 8 / 9
+- If your server's OS: Enterprise Linux 8 / 9
 ```bash
 yum -y install wget git
 git clone https://github.com/teddysun/lcmp.git
@@ -73,7 +73,7 @@ chmod 755 *.sh
 
 ## Upgrade
 
-- If your server's OS: Enterprise Linux 7 / 8 / 9
+- If your server's OS: Enterprise Linux 8 / 9
 ```bash
 yum update -y caddy
 yum update -y MariaDB-*
@@ -88,14 +88,14 @@ chown root:caddy /var/lib/php/opcache
 ```bash
 apt-get install --only-upgrade -y caddy
 apt-get install --only-upgrade -y mariadb-*
-# for example: php_ver=[8.0|8.1|8.2]
+# for example: php_ver=[8.0|8.1|8.2|8.3]
 php_ver="8.2"
 apt-get install --only-upgrade -y php${php_ver}-*
 ```
 
 ## Uninstall
 
-- If your server's OS: Enterprise Linux 7 / 8 / 9
+- If your server's OS: Enterprise Linux 8 / 9
 ```bash
 yum remove -y caddy
 yum remove -y MariaDB-*
@@ -106,7 +106,7 @@ yum remove -y php-*
 ```bash
 apt-get remove -y caddy
 apt-get remove -y mariadb-*
-# for example: php_ver=[8.0|8.1|8.2]
+# for example: php_ver=[8.0|8.1|8.2|8.3]
 php_ver="8.2"
 apt-get remove -y php${php_ver}-*
 ```

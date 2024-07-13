@@ -4,7 +4,6 @@
 # LCMP (Linux + Caddy + MariaDB + PHP) installation
 #
 # Supported OS:
-# Enterprise Linux 7 (CentOS 7, RHEL 7)
 # Enterprise Linux 8 (CentOS 8, RHEL 8, Rocky Linux 8, AlmaLinux 8, Oracle Linux 8)
 # Enterprise Linux 9 (CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9, Oracle Linux 9)
 # Debian 10
@@ -12,6 +11,7 @@
 # Debian 12
 # Ubuntu 20.04
 # Ubuntu 22.04
+# Ubuntu 24.04
 #
 # Copyright (C) 2023 - 2024 Teddysun <i@teddysun.com>
 #
@@ -200,10 +200,10 @@ check_bbr_status() {
 [ ${EUID} -ne 0 ] && _red "This script must be run as root!\n" && exit 1
 
 # Check OS
-if ! get_rhelversion 7 && ! get_rhelversion 8 && ! get_rhelversion 9 &&
-    ! get_debianversion 10 && ! get_debianversion 11 && ! get_debianversion 12 &&
-    ! get_ubuntuversion 20.04 && ! get_ubuntuversion 22.04; then
-    _error "Not supported OS, please change OS to Enterprise Linux 7+ or Debian 10+ or Ubuntu 20.04+ and try again."
+if ! get_rhelversion 8 && ! get_rhelversion 9 &&
+   ! get_debianversion 10 && ! get_debianversion 11 && ! get_debianversion 12 &&
+   ! get_ubuntuversion 20.04 && ! get_ubuntuversion 22.04 && ! get_ubuntuversion 24.04; then
+    _error "Not supported OS, please change OS to Enterprise Linux 8+ or Debian 10+ or Ubuntu 20.04+ and try again."
 fi
 # Set MariaDB root password
 _info "Please input the root password of MariaDB:"
@@ -228,57 +228,22 @@ while true; do
     case "${php_version}" in
     1)
         php_ver="7.4"
-        if check_sys rhel; then
-            if get_rhelversion 7; then
-                remi_php="remi-php74"
-            else
-                remi_php="php:remi-${php_ver}"
-            fi
-        fi
         break
         ;;
     2)
         php_ver="8.0"
-        if check_sys rhel; then
-            if get_rhelversion 7; then
-                remi_php="remi-php80"
-            else
-                remi_php="php:remi-${php_ver}"
-            fi
-        fi
         break
         ;;
     3)
         php_ver="8.1"
-        if check_sys rhel; then
-            if get_rhelversion 7; then
-                remi_php="remi-php81"
-            else
-                remi_php="php:remi-${php_ver}"
-            fi
-        fi
         break
         ;;
     4)
         php_ver="8.2"
-        if check_sys rhel; then
-            if get_rhelversion 7; then
-                remi_php="remi-php82"
-            else
-                remi_php="php:remi-${php_ver}"
-            fi
-        fi
         break
         ;;
     5)
         php_ver="8.3"
-        if check_sys rhel; then
-            if get_rhelversion 7; then
-                remi_php="remi-php83"
-            else
-                remi_php="php:remi-${php_ver}"
-            fi
-        fi
         break
         ;;
     *)
@@ -302,16 +267,16 @@ if check_sys rhel; then
     if get_rhelversion 8; then
         yum-config-manager --enable powertools >/dev/null 2>&1 || yum-config-manager --enable PowerTools >/dev/null 2>&1
         _info "Set enable PowerTools Repository completed"
+        _error_detect "yum install -yq https://dl.lamp.sh/shadowsocks/rhel/el8/x86_64/teddysun-release-1.0-1.el8.noarch.rpm"
     fi
     if get_rhelversion 9; then
         _error_detect "yum-config-manager --enable crb"
         _info "Set enable CRB Repository completed"
         echo "set enable-bracketed-paste off" >>/etc/inputrc
+        _error_detect "yum install -y https://dl.lamp.sh/shadowsocks/rhel/el9/x86_64/teddysun-release-1.0-1.el9.noarch.rpm"
     fi
-    _error_detect "yum install -yq vim tar zip unzip net-tools bind-utils screen git virt-what wget whois firewalld mtr traceroute iftop htop jq tree"
-    _error_detect "yum-config-manager --add-repo https://dl.lamp.sh/linux/rhel/teddysun_linux.repo"
-    _info "Teddysun's Linux Repository installation completed"
     _error_detect "yum makecache"
+    _error_detect "yum install -yq vim tar zip unzip net-tools bind-utils screen git virt-what wget whois firewalld mtr traceroute iftop htop jq tree"
     # Replaced local curl from teddysun linux Repository
     _error_detect "yum install -yq curl libcurl libcurl-devel"
     if [ -s "/etc/selinux/config" ] && grep 'SELINUX=enforcing' /etc/selinux/config; then
@@ -380,14 +345,10 @@ sleep 3
 clear
 _info "LCMP (Linux + Caddy + MariaDB + PHP) installation start"
 if check_sys rhel; then
-    if get_rhelversion 7; then
-        _error_detect "yum install -yq yum-plugin-copr"
-        _error_detect "yum copr enable -yq @caddy/caddy"
-    fi
-    if get_rhelversion 8 || get_rhelversion 9; then
-        _error_detect "yum install -yq dnf-plugins-core"
-        _error_detect "yum copr enable -yq @caddy/caddy"
-    fi
+    # if get_rhelversion 8 || get_rhelversion 9; then
+        # _error_detect "yum install -yq dnf-plugins-core"
+        # _error_detect "yum copr enable -yq @caddy/caddy"
+    # fi
     _error_detect "yum install -yq caddy"
 elif check_sys debian || check_sys ubuntu; then
     _error_detect "wget -qO caddy-stable_deb.sh https://dl.cloudsmith.io/public/caddy/stable/setup.deb.sh"
@@ -460,21 +421,14 @@ if check_sys rhel; then
     php_fpm="php-fpm"
     php_sock="unix//run/php-fpm/www.sock"
     sock_location="/var/lib/mysql/mysql.sock"
-    if get_rhelversion 7; then
-        _error_detect "yum install -yq https://rpms.remirepo.net/enterprise/remi-release-7.rpm"
-        _error_detect "yum-config-manager --disable 'remi-php*'"
-        _error_detect "yum-config-manager --enable ${remi_php}"
-    fi
     if get_rhelversion 8; then
         _error_detect "yum install -yq https://rpms.remirepo.net/enterprise/remi-release-8.rpm"
-        _error_detect "yum module reset -yq php"
-        _error_detect "yum module install -yq ${remi_php}"
     fi
     if get_rhelversion 9; then
         _error_detect "yum install -yq https://rpms.remirepo.net/enterprise/remi-release-9.rpm"
-        _error_detect "yum module reset -yq php"
-        _error_detect "yum module install -yq ${remi_php}"
     fi
+    _error_detect "yum module reset -yq php"
+    _error_detect "yum module install -yq php:remi-${php_ver}"
     _error_detect "yum install -yq php-common php-fpm php-cli php-bcmath php-embedded php-gd php-imap php-mysqlnd php-dba php-pdo php-pdo-dblib"
     _error_detect "yum install -yq php-pgsql php-odbc php-enchant php-gmp php-intl php-ldap php-snmp php-soap php-tidy php-opcache php-process"
     _error_detect "yum install -yq php-pspell php-shmop php-sodium php-ffi php-brotli php-lz4 php-xz php-zstd php-pecl-rar"
