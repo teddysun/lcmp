@@ -380,6 +380,7 @@ _info "./mariadb_repo_setup.sh --mariadb-server-version=mariadb-10.11"
 ./mariadb_repo_setup.sh --mariadb-server-version=mariadb-10.11 >/dev/null 2>&1
 _error_detect "rm -f mariadb_repo_setup.sh"
 if check_sys rhel; then
+    _error_detect "yum config-manager --disable mariadb-maxscale"
     _error_detect "yum install -y MariaDB-common MariaDB-server MariaDB-client MariaDB-shared MariaDB-backup"
     mariadb_cnf="/etc/my.cnf.d/server.cnf"
 elif check_sys debian || check_sys ubuntu; then
