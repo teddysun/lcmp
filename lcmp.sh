@@ -267,13 +267,13 @@ if check_sys rhel; then
     if get_rhelversion 8; then
         yum-config-manager --enable powertools >/dev/null 2>&1 || yum-config-manager --enable PowerTools >/dev/null 2>&1
         _info "Set enable PowerTools Repository completed"
-        _error_detect "yum install -yq https://dl.lamp.sh/shadowsocks/rhel/el8/x86_64/teddysun-release-1.0-1.el8.noarch.rpm"
+        _error_detect "yum install -yq https://dl.lamp.sh/linux/rhel/el8/x86_64/teddysun-release-1.0-1.el8.noarch.rpm"
     fi
     if get_rhelversion 9; then
         _error_detect "yum-config-manager --enable crb"
         _info "Set enable CRB Repository completed"
         echo "set enable-bracketed-paste off" >>/etc/inputrc
-        _error_detect "yum install -y https://dl.lamp.sh/shadowsocks/rhel/el9/x86_64/teddysun-release-1.0-1.el9.noarch.rpm"
+        _error_detect "yum install -y https://dl.lamp.sh/linux/rhel/el9/x86_64/teddysun-release-1.0-1.el9.noarch.rpm"
     fi
     _error_detect "yum makecache"
     _error_detect "yum install -yq vim tar zip unzip net-tools bind-utils screen git virt-what wget whois firewalld mtr traceroute iftop htop jq tree"
