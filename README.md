@@ -28,7 +28,6 @@ And all things will be done in a few minutes.
 
 - Enterprise Linux 8 (CentOS Stream 8, RHEL 8, Rocky Linux 8, AlmaLinux 8, Oracle Linux 8)
 - Enterprise Linux 9 (CentOS Stream 9, RHEL 9, Rocky Linux 9, AlmaLinux 9, Oracle Linux 9)
-- Debian 10
 - Debian 11
 - Debian 12
 - Ubuntu 20.04
@@ -66,7 +65,7 @@ chmod 755 *.sh
 ./lcmp.sh 2>&1 | tee lcmp.log
 ```
 
-- If your server's OS: Debian 10+ / Ubuntu 20.04+
+- If your server's OS: Debian 11+ / Ubuntu 20.04+
 ```bash
 apt-get -y install wget git
 git clone https://github.com/teddysun/lcmp.git
@@ -88,11 +87,11 @@ chown root:caddy /var/lib/php/wsdlcache
 chown root:caddy /var/lib/php/opcache
 ```
 
-- If your server's OS: Debian 10+ / Ubuntu 20.04+
+- If your server's OS: Debian 11+ / Ubuntu 20.04+
 ```bash
 apt-get install --only-upgrade -y caddy
 apt-get install --only-upgrade -y mariadb-*
-# for example: php_ver=[8.0|8.1|8.2|8.3]
+# for example: php_ver=[7.4|8.0|8.1|8.2|8.3]
 php_ver="8.2"
 apt-get install --only-upgrade -y php${php_ver}-*
 ```
@@ -106,11 +105,11 @@ yum remove -y MariaDB-*
 yum remove -y php-*
 ```
 
-- If your server's OS: Debian 10+ / Ubuntu 20.04+
+- If your server's OS: Debian 11+ / Ubuntu 20.04+
 ```bash
 apt-get remove -y caddy
 apt-get remove -y mariadb-*
-# for example: php_ver=[8.0|8.1|8.2|8.3]
+# for example: php_ver=[7.4|8.0|8.1|8.2|8.3]
 php_ver="8.2"
 apt-get remove -y php${php_ver}-*
 ```

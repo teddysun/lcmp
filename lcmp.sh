@@ -201,9 +201,9 @@ check_bbr_status() {
 
 # Check OS
 if ! get_rhelversion 8 && ! get_rhelversion 9 &&
-   ! get_debianversion 10 && ! get_debianversion 11 && ! get_debianversion 12 &&
+   ! get_debianversion 11 && ! get_debianversion 12 &&
    ! get_ubuntuversion 20.04 && ! get_ubuntuversion 22.04 && ! get_ubuntuversion 24.04; then
-    _error "Not supported OS, please change OS to Enterprise Linux 8+ or Debian 10+ or Ubuntu 20.04+ and try again."
+    _error "Not supported OS, please change OS to Enterprise Linux 8+ or Debian 11+ or Ubuntu 20.04+ and try again."
 fi
 # Set MariaDB root password
 _info "Please input the root password of MariaDB:"
