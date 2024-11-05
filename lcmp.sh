@@ -418,12 +418,12 @@ _info "MariaDB installation completed"
 
 lnum=$(sed -n '/\[mysqld\]/=' "${mariadb_cnf}")
 sed -i "${lnum}ainnodb_buffer_pool_size = 100M\nmax_allowed_packet = 1024M\nnet_read_timeout = 3600\nnet_write_timeout = 3600" "${mariadb_cnf}"
-lnum=$(sed -n '/\[mariadb\]/=' "${mariadb_cnf}")
+lnum=$(sed -n '/\[mariadb\]/=' "${mariadb_cnf}" | tail -1)
 sed -i "${lnum}acharacter-set-server = utf8mb4\n\n\[client-mariadb\]\ndefault-character-set = utf8mb4" "${mariadb_cnf}"
 _error_detect "systemctl start mariadb"
-/usr/bin/mysql -e "grant all privileges on *.* to root@'127.0.0.1' identified by \"${db_pass}\" with grant option;"
-/usr/bin/mysql -e "grant all privileges on *.* to root@'localhost' identified by \"${db_pass}\" with grant option;"
-/usr/bin/mysql -uroot -p"${db_pass}" 2>/dev/null <<EOF
+/usr/bin/mariadb -e "grant all privileges on *.* to root@'127.0.0.1' identified by \"${db_pass}\" with grant option;"
+/usr/bin/mariadb -e "grant all privileges on *.* to root@'localhost' identified by \"${db_pass}\" with grant option;"
+/usr/bin/mariadb -uroot -p"${db_pass}" 2>/dev/null <<EOF
 drop database if exists test;
 delete from mysql.db where user='';
 delete from mysql.db where user='PUBLIC';
@@ -439,8 +439,8 @@ _error_detect "wget -q https://dl.lamp.sh/files/pma.tar.gz"
 _error_detect "tar zxf pma.tar.gz"
 _error_detect "rm -f pma.tar.gz"
 _error_detect "cd ${cur_dir}"
-_info "/usr/bin/mysql -uroot -p 2>/dev/null < /data/www/default/pma/sql/create_tables.sql"
-/usr/bin/mysql -uroot -p"${db_pass}" 2>/dev/null </data/www/default/pma/sql/create_tables.sql
+_info "/usr/bin/mariadb -uroot -p 2>/dev/null < /data/www/default/pma/sql/create_tables.sql"
+/usr/bin/mariadb -uroot -p"${db_pass}" 2>/dev/null </data/www/default/pma/sql/create_tables.sql
 _info "Set MariaDB completed"
 
 if check_sys rhel; then
