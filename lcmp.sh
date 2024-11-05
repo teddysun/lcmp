@@ -205,6 +205,32 @@ if ! get_rhelversion 8 && ! get_rhelversion 9 &&
    ! get_ubuntuversion 20.04 && ! get_ubuntuversion 22.04 && ! get_ubuntuversion 24.04; then
     _error "Not supported OS, please change OS to Enterprise Linux 8+ or Debian 11+ or Ubuntu 20.04+ and try again."
 fi
+
+# Choose MariaDB version
+while true; do
+    _info "Please choose a version of the MariaDB:"
+    _info "$(_green 1). MariaDB 10.11"
+    _info "$(_green 2). MariaDB 11.4"
+    read -r -p "[$(date)] Please input a number: (Default 1) " mariadb_version
+    [ -z "${mariadb_version}" ] && mariadb_version=1
+    case "${mariadb_version}" in
+    1)
+        mariadb_ver="10.11"
+        break
+        ;;
+    2)
+        mariadb_ver="11.4"
+        break
+        ;;
+    *)
+        _info "Input error! Please only input a number 1 2"
+        ;;
+    esac
+done
+_info "---------------------------"
+_info "MariaDB version = $(_red "${mariadb_ver}")"
+_info "---------------------------"
+
 # Set MariaDB root password
 _info "Please input the root password of MariaDB:"
 read -r -p "[$(date)] (Default password: Teddysun.com):" db_pass
@@ -377,8 +403,8 @@ _info "Set Caddy completed"
 
 _error_detect "wget -qO mariadb_repo_setup.sh https://downloads.mariadb.com/MariaDB/mariadb_repo_setup"
 _error_detect "chmod +x mariadb_repo_setup.sh"
-_info "./mariadb_repo_setup.sh --mariadb-server-version=mariadb-10.11"
-./mariadb_repo_setup.sh --mariadb-server-version=mariadb-10.11 >/dev/null 2>&1
+_info "./mariadb_repo_setup.sh --mariadb-server-version=mariadb-${mariadb_ver}"
+./mariadb_repo_setup.sh --mariadb-server-version=mariadb-${mariadb_ver} >/dev/null 2>&1
 _error_detect "rm -f mariadb_repo_setup.sh"
 if check_sys rhel; then
     _error_detect "yum config-manager --disable mariadb-maxscale"

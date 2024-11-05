@@ -45,14 +45,14 @@ And all things will be done in a few minutes.
 ## Supported Software
 
 - Caddy 2
-- MariaDB 10.11
-- PHP-7.4, PHP-8.0, PHP-8.1, PHP-8.2, PHP-8.3
+- MariaDB 10.11, 11.4
+- PHP-7.4, 8.0, 8.1, 8.2, 8.3
 
 ※Explanation
 
-- Caddy rpm packages provided by [Teddysun Repository](https://dl.lamp.sh/linux/), deb packages provided by [cloudsmith.io](https://cloudsmith.io/~caddy/repos/)
 - MariaDB packages provided by [MariaDB Repository](https://downloads.mariadb.com/MariaDB/)
 - PHP rpm packages provided by [remi Repository](https://rpms.remirepo.net/), deb packages provided by [deb.sury.org](https://deb.sury.org/)
+- Caddy rpm packages provided by [Teddysun Repository](https://dl.lamp.sh/linux/), deb packages provided by [cloudsmith.io](https://cloudsmith.io/~caddy/repos/)
 
 ## Installation
 
