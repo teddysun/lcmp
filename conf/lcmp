@@ -6,7 +6,6 @@
 # Supported OS:
 # Enterprise Linux 8 (CentOS 8, RHEL 8, Rocky Linux 8, AlmaLinux 8, Oracle Linux 8)
 # Enterprise Linux 9 (CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9, Oracle Linux 9)
-# Debian 10
 # Debian 11
 # Debian 12
 # Ubuntu 20.04
@@ -426,6 +425,17 @@ lcmp_status() {
     systemctl --no-pager -l status "${php_fpm}"
 }
 
+lcmp_version() {
+    _info "Caddy version:"
+    /usr/bin/caddy version
+    echo
+    _info "MariaDB version:"
+    /usr/bin/mariadb --version
+    echo
+    _info "PHP version:"
+    /usr/bin/php -v
+}
+
 check_env() {
     if check_sys rhel; then
         php_sock="unix//run/php-fpm/www.sock"
@@ -467,6 +477,9 @@ case "${arg1}" in
     status)
         lcmp_status
         ;;
+    version)
+        lcmp_version
+        ;;
     vhost)
         vhost "${arg2}"
         ;;
@@ -481,6 +494,7 @@ case "${arg1}" in
         _info "$(_green "lcmp stop")       Stop all of LCMP services"
         _info "$(_green "lcmp restart")    Restart all of LCMP services"
         _info "$(_green "lcmp status")     Check all of LCMP services status"
+        _info "$(_green "lcmp version")    Print all of LCMP software version"
         _info "$(_green "lcmp vhost add")  Create a new Caddy virtual host"
         _info "$(_green "lcmp vhost list") List all of Caddy virtual hosts"
         _info "$(_green "lcmp vhost del")  Delete a Caddy virtual host"

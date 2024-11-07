@@ -152,6 +152,7 @@ apt-get remove -y php${php_ver}-*
 | lcmp stop        | Stop all of LCMP services                             |
 | lcmp restart     | Restart all of LCMP services                          |
 | lcmp status      | Check all of LCMP services status                     |
+| lcmp version     | Print all of LCMP software version                    |
 | lcmp vhost add   | Create a new Caddy virtual host                       |
 | lcmp vhost list  | List all of Caddy virtual hosts                       |
 | lcmp vhost del   | Delete a Caddy virtual host                           |
