@@ -46,7 +46,7 @@ And all things will be done in a few minutes.
 
 - Caddy 2
 - MariaDB 10.11, 11.4
-- PHP-7.4, 8.0, 8.1, 8.2, 8.3, 8.4
+- PHP 7.4, 8.0, 8.1, 8.2, 8.3, 8.4
 
 ※ Details
 
