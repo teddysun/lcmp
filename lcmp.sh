@@ -249,6 +249,7 @@ while true; do
     _info "$(_green 3). PHP 8.1"
     _info "$(_green 4). PHP 8.2"
     _info "$(_green 5). PHP 8.3"
+    _info "$(_green 6). PHP 8.4"
     read -r -p "[$(date)] Please input a number: (Default 4) " php_version
     [ -z "${php_version}" ] && php_version=4
     case "${php_version}" in
@@ -272,8 +273,12 @@ while true; do
         php_ver="8.3"
         break
         ;;
+    6)
+        php_ver="8.4"
+        break
+        ;;
     *)
-        _info "Input error! Please only input a number 1 2 3 4 5"
+        _info "Input error! Please only input a number 1 2 3 4 5 6"
         ;;
     esac
 done
