@@ -232,7 +232,7 @@ list_vhost() {
     while IFS=' ' read -r line; do vhosts+=("${line}"); done < <(find /etc/caddy/conf.d/ -name "*.conf" -type f -printf "%f\n" | sed 's/.conf//g' | grep -v "default")
     if [ "${#vhosts[@]}" -gt 0 ]; then
         for i in "${vhosts[@]}"; do
-            _info "$(_green "${i}")"
+            _info "  $(_green "${i}")"
         done
     else
         _info "Caddy virtual host not found. You can create a new Caddy virtual host with command: $(_green "lcmp vhost add")"
@@ -458,7 +458,7 @@ arg2=$2
 _info "+-------------------------------------------+"
 _info "|    Manager for LCMP, Written by Teddysun  |"
 _info "+-------------------------------------------+"
-_info "|    https://github.com/teddysun/lcmp       |"
+_info "|    $(_green "https://github.com/teddysun/lcmp")       |"
 _info "+-------------------------------------------+"
 
 check_env
@@ -490,17 +490,17 @@ case "${arg1}" in
         ;;
     *)
         _info "Usage:"
-        _info "$(_green "lcmp start")      Start all of LCMP services"
-        _info "$(_green "lcmp stop")       Stop all of LCMP services"
-        _info "$(_green "lcmp restart")    Restart all of LCMP services"
-        _info "$(_green "lcmp status")     Check all of LCMP services status"
-        _info "$(_green "lcmp version")    Print all of LCMP software version"
-        _info "$(_green "lcmp vhost add")  Create a new Caddy virtual host"
-        _info "$(_green "lcmp vhost list") List all of Caddy virtual hosts"
-        _info "$(_green "lcmp vhost del")  Delete a Caddy virtual host"
-        _info "$(_green "lcmp db add")     Create a MariaDB database and a user with same name"
-        _info "$(_green "lcmp db list")    List all of MariaDB databases"
-        _info "$(_green "lcmp db del")     Delete a MariaDB database and a user with same name"
-        _info "$(_green "lcmp db edit")    Update a MariaDB database username's password"
+        _info "  $(_green "lcmp start")      Start all of LCMP services"
+        _info "  $(_green "lcmp stop")       Stop all of LCMP services"
+        _info "  $(_green "lcmp restart")    Restart all of LCMP services"
+        _info "  $(_green "lcmp status")     Check all of LCMP services status"
+        _info "  $(_green "lcmp version")    Print all of LCMP software version"
+        _info "  $(_green "lcmp vhost add")  Create a new Caddy virtual host"
+        _info "  $(_green "lcmp vhost list") List all of Caddy virtual hosts"
+        _info "  $(_green "lcmp vhost del")  Delete a Caddy virtual host"
+        _info "  $(_green "lcmp db add")     Create a MariaDB database and a user with same name"
+        _info "  $(_green "lcmp db list")    List all of MariaDB databases"
+        _info "  $(_green "lcmp db del")     Delete a MariaDB database and a user with same name"
+        _info "  $(_green "lcmp db edit")    Update a MariaDB database username's password"
         ;;
 esac
