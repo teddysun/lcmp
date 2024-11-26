@@ -172,16 +172,16 @@ add_vhost() {
     if [ -z "${vhostdir}" ]; then
         vhostdir="/data/www/${domain}"
     fi
-    _info "Virtual host directory: $(_green "${vhostdir}")"
+    _info "Virtual Host directory: $(_green "${vhostdir}")"
 
     read -r -p "[$(date)] Create a MariaDB database and a user with same name (y/n): " create_database
     if [ "${create_database}" == "y" ] || [ "${create_database}" == "Y" ]; then
         verify_db_password
         add_database_menu
     fi
-    _info "Create Virtual host directory"
+    _info "Create Virtual Host directory"
     _error_detect "mkdir -p ${vhostdir}"
-    _info "Set permissions of virtual host directory"
+    _info "Set permissions of Virtual Host directory"
     _error_detect "chmod -R 755 ${vhostdir}"
     _error_detect "chown -R caddy:caddy ${vhostdir}"
     add_vhost_config
@@ -189,10 +189,10 @@ add_vhost() {
         add_database
     fi
     _error_detect "systemctl restart caddy"
-    _info "Virtual host infomation:"
+    _info "Virtual Host infomation:"
     _info "Domain name: $(_green "${domain}")"
-    _info "Virtual host directory: $(_green "${vhostdir}")"
-    _info "Virtual host config: $(_green "/etc/caddy/conf.d/${domain}.conf")"
+    _info "Virtual Host directory: $(_green "${vhostdir}")"
+    _info "Virtual Host config: $(_green "/etc/caddy/conf.d/${domain}.conf")"
     list_vhost
     if [ "${create_database}" == "y" ] || [ "${create_database}" == "Y" ]; then
         _info "Database username: ${database_name}"
@@ -227,7 +227,7 @@ EOF
 }
 
 list_vhost() {
-    _info "Caddy virtual host list:"
+    _info "Caddy Virtual Host list:"
     local vhosts=()
     while IFS=' ' read -r line; do vhosts+=("${line}"); done < <(find /etc/caddy/conf.d/ -name "*.conf" -type f -printf "%f\n" | sed 's/.conf//g' | grep -v "default")
     if [ "${#vhosts[@]}" -gt 0 ]; then
@@ -235,7 +235,7 @@ list_vhost() {
             _info "  $(_green "${i}")"
         done
     else
-        _info "Caddy virtual host not found. You can create a new Caddy virtual host with command: $(_green "lcmp vhost add")"
+        _info "Caddy Virtual Host not found. You can create a new Caddy Virtual Host with command: $(_green "lcmp vhost add")"
     fi
 }
 
@@ -281,7 +281,7 @@ clean_temp_mycnf() {
 do_query() {
     echo "$1" >/tmp/.mysql.tmp
     chmod 600 /tmp/.mysql.tmp
-    /usr/bin/mysql --defaults-file=~/.my.cnf </tmp/.mysql.tmp
+    /usr/bin/mariadb --defaults-file=~/.my.cnf </tmp/.mysql.tmp
     return $?
 }
 
@@ -289,7 +289,7 @@ verify_db_password() {
     status=1
     while [ ${status} -eq 1 ]; do
         read -r -p "[$(date)] Please input current root password of Database (password will not shown): " db_root_password
-        if ! /usr/bin/mysql -uroot -p"${db_root_password}" -e "exit" >/dev/null 2>&1; then
+        if ! /usr/bin/mariadb -uroot -p"${db_root_password}" -e "exit" >/dev/null 2>&1; then
             _red "MariaDB root password incorrect, Please check it and try again.\n"
         fi
         make_temp_mycnf "${db_root_password}"
@@ -330,7 +330,7 @@ GRANT ALL PRIVILEGES ON \`${database_name}\`.* TO '${database_name}'@'localhost'
 GRANT ALL PRIVILEGES ON \`${database_name}\`.* TO '${database_name}'@'127.0.0.1';
 FLUSH PRIVILEGES;
 EOF
-    if /usr/bin/mysql --defaults-file=~/.my.cnf </tmp/.add_mysql.sql >/dev/null 2>&1; then
+    if /usr/bin/mariadb --defaults-file=~/.my.cnf </tmp/.add_mysql.sql >/dev/null 2>&1; then
         _info "Add database $(_green "${database_name}") sucessfully."
     else
         _info "Add database $(_red "${database_name}") failed."
@@ -339,7 +339,7 @@ EOF
 }
 
 list_database() {
-    if /usr/bin/mysql --defaults-file=~/.my.cnf -e "SHOW DATABASES;"; then
+    if /usr/bin/mariadb --defaults-file=~/.my.cnf -e "SHOW DATABASES;"; then
         _info "List all databases sucessfully."
     else
         _info "List all databases failed."
@@ -361,7 +361,7 @@ DROP USER '${database_name}'@'localhost';
 DROP DATABASE \`${database_name}\`;
 FLUSH PRIVILEGES;
 EOF
-    if /usr/bin/mysql --defaults-file=~/.my.cnf </tmp/.del.mysql.sql; then
+    if /usr/bin/mariadb --defaults-file=~/.my.cnf </tmp/.del.mysql.sql; then
         _info "Delete database $(_green "${database_name}") sucessfully."
     else
         _info "Delete database $(_red "${database_name}") failed."
@@ -495,9 +495,9 @@ case "${arg1}" in
         _info "  $(_green "lcmp restart")    Restart all of LCMP services"
         _info "  $(_green "lcmp status")     Check all of LCMP services status"
         _info "  $(_green "lcmp version")    Print all of LCMP software version"
-        _info "  $(_green "lcmp vhost add")  Create a new Caddy virtual host"
-        _info "  $(_green "lcmp vhost list") List all of Caddy virtual hosts"
-        _info "  $(_green "lcmp vhost del")  Delete a Caddy virtual host"
+        _info "  $(_green "lcmp vhost add")  Create a new Caddy Virtual Host"
+        _info "  $(_green "lcmp vhost list") List all of Caddy Virtual Hosts"
+        _info "  $(_green "lcmp vhost del")  Delete a Caddy Virtual Host"
         _info "  $(_green "lcmp db add")     Create a MariaDB database and a user with same name"
         _info "  $(_green "lcmp db list")    List all of MariaDB databases"
         _info "  $(_green "lcmp db del")     Delete a MariaDB database and a user with same name"
