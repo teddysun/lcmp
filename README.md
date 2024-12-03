@@ -45,7 +45,7 @@ And all things will be done in a few minutes.
 
 ## Supported Software
 
-- Caddy 2 ※ Caddy rpm packages provided by [Teddysun Repository](https://dl.lamp.sh/linux/), deb packages provided by [cloudsmith.io](https://cloudsmith.io/~caddy/repos/)
+- Caddy 2 ※ Caddy packages provided by [Teddysun Repository](https://dl.lamp.sh/shadowsocks/)
 - MariaDB 10.11, 11.4 ※ MariaDB packages provided by [MariaDB Repository](https://downloads.mariadb.com/MariaDB/)
 - PHP 7.4, 8.0, 8.1, 8.2, 8.3, 8.4 ※ PHP rpm packages provided by [remi Repository](https://rpms.remirepo.net/), deb packages provided by [deb.sury.org](https://deb.sury.org/)
 
