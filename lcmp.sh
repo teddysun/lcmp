@@ -6,7 +6,6 @@
 # Supported OS:
 # Enterprise Linux 8 (CentOS 8, RHEL 8, Rocky Linux 8, AlmaLinux 8, Oracle Linux 8)
 # Enterprise Linux 9 (CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9, Oracle Linux 9)
-# Debian 10
 # Debian 11
 # Debian 12
 # Ubuntu 20.04
@@ -435,12 +434,10 @@ delete from mysql.user where user='PUBLIC';
 flush privileges;
 exit
 EOF
-_error_detect "cd /data/www/default"
 # Install phpMyAdmin
-_error_detect "wget -q https://dl.lamp.sh/files/pma.tar.gz"
-_error_detect "tar zxf pma.tar.gz"
+_error_detect "wget -qO pma.tar.gz https://dl.lamp.sh/files/pma.tar.gz"
+_error_detect "tar zxf pma.tar.gz -C /data/www/default/"
 _error_detect "rm -f pma.tar.gz"
-_error_detect "cd ${cur_dir}"
 _info "/usr/bin/mariadb -uroot -p 2>/dev/null < /data/www/default/pma/sql/create_tables.sql"
 /usr/bin/mariadb -uroot -p"${db_pass}" 2>/dev/null </data/www/default/pma/sql/create_tables.sql
 _info "Set MariaDB completed"
