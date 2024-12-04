@@ -422,6 +422,7 @@ lnum=$(sed -n '/\[mysqld\]/=' "${mariadb_cnf}")
 lnum=$(sed -n '/\[mariadb\]/=' "${mariadb_cnf}" | tail -1)
 [ -n "${lnum}" ] && sed -i "${lnum}acharacter-set-server = utf8mb4\n\n\[client-mariadb\]\ndefault-character-set = utf8mb4" "${mariadb_cnf}"
 _error_detect "systemctl start mariadb"
+sleep 3
 /usr/bin/mariadb -e "grant all privileges on *.* to root@'127.0.0.1' identified by \"${db_pass}\" with grant option;"
 /usr/bin/mariadb -e "grant all privileges on *.* to root@'localhost' identified by \"${db_pass}\" with grant option;"
 /usr/bin/mariadb -uroot -p"${db_pass}" 2>/dev/null <<EOF
