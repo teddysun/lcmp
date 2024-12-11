@@ -8,7 +8,7 @@
 
 LCMP (Linux + Caddy + MariaDB + PHP) is a powerful bash script for the installation of Caddy2 + MariaDB + PHP and so on.
 
-You can install Caddy2 + MariaDB + PHP in a smaller memory VPS by yum(dnf) or apt-get command, Just need to input numbers to choose what you want to install before installation.
+You can install Caddy2 + MariaDB + PHP in a smaller memory VPS by `yum` / `dnf` or `apt-get` command, Just need to input numbers to choose what you want to install before installation.
 
 And all things will be done in a few minutes.
 
@@ -139,10 +139,10 @@ apt-get remove -y php${php_ver}-*
 
 | Process     | Command                                                    |
 |-------------|------------------------------------------------------------|
-| PHP (rpm)   | systemctl [start\|stop\|status\|restart] php-fpm           |
-| PHP (deb)   | systemctl [start\|stop\|status\|restart] php${php_ver}-fpm |
 | Caddy       | systemctl [start\|stop\|status\|restart] caddy             |
 | MariaDB     | systemctl [start\|stop\|status\|restart] mariadb           |
+| PHP (rpm)   | systemctl [start\|stop\|status\|restart] php-fpm           |
+| PHP (deb)   | systemctl [start\|stop\|status\|restart] php${php_ver}-fpm |
 
 ## lcmp Command
 
