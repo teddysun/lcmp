@@ -516,9 +516,7 @@ sed -i "s@^expose_php.*@expose_php = Off@" "${php_ini}"
 sed -i "s@^short_open_tag.*@short_open_tag = On@" "${php_ini}"
 sed -i "s#mysqli.default_socket.*#mysqli.default_socket = ${sock_location}#" "${php_ini}"
 sed -i "s#pdo_mysql.default_socket.*#pdo_mysql.default_socket = ${sock_location}#" "${php_ini}"
-_error_detect "chown root:caddy /var/lib/php/session"
-_error_detect "chown root:caddy /var/lib/php/wsdlcache"
-_error_detect "chown root:caddy /var/lib/php/opcache"
+_error_detect "chown root:caddy /var/lib/php/{session,wsdlcache,opcache}"
 _info "Set PHP completed"
 
 cat >/etc/caddy/conf.d/default.conf <<EOF

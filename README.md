@@ -82,9 +82,7 @@ yum update -y caddy
 yum update -y MariaDB-*
 yum update -y php-*
 # Change PHP directory's group for Caddy again if you upgraded PHP version
-chown root:caddy /var/lib/php/session
-chown root:caddy /var/lib/php/wsdlcache
-chown root:caddy /var/lib/php/opcache
+chown root:caddy /var/lib/php/{session,wsdlcache,opcache}
 ```
 
 - If your server's OS: Debian 11+ / Ubuntu 20.04+
