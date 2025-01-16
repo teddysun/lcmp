@@ -12,7 +12,7 @@
 # Ubuntu 22.04
 # Ubuntu 24.04
 #
-# Copyright (C) 2023 - 2024 Teddysun <i@teddysun.com>
+# Copyright (C) 2023 - 2025 Teddysun <i@teddysun.com>
 #
 trap _exit INT QUIT TERM
 
