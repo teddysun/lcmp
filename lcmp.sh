@@ -401,7 +401,7 @@ _error_detect "cp -f ${cur_dir}/conf/index.html /data/www/default/"
 _error_detect "cp -f ${cur_dir}/conf/lcmp.png /data/www/default/"
 _info "Set Caddy completed"
 
-_error_detect "wget -qO mariadb_repo_setup.sh https://downloads.mariadb.com/MariaDB/mariadb_repo_setup"
+_error_detect "curl -sLo mariadb_repo_setup.sh https://dl.lamp.sh/files/mariadb_repo_setup.sh"
 _error_detect "chmod +x mariadb_repo_setup.sh"
 _info "./mariadb_repo_setup.sh --mariadb-server-version=mariadb-${mariadb_ver}"
 ./mariadb_repo_setup.sh --mariadb-server-version=mariadb-${mariadb_ver} >/dev/null 2>&1
