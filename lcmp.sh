@@ -292,24 +292,24 @@ _info "VPS initialization start"
 _error_detect "rm -f /etc/localtime"
 _error_detect "ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime"
 if check_sys rhel; then
-    _error_detect "yum install -yq yum-utils epel-release"
-    _error_detect "yum-config-manager --enable epel"
+    _error_detect "dnf install -yq yum-utils epel-release"
+    _error_detect "dnf config-manager --enable epel"
     if get_rhelversion 8; then
-        yum-config-manager --enable powertools >/dev/null 2>&1 || yum-config-manager --enable PowerTools >/dev/null 2>&1
+        dnf config-manager --enable powertools >/dev/null 2>&1 || dnf config-manager --enable PowerTools >/dev/null 2>&1
         _info "Set enable PowerTools Repository completed"
-        _error_detect "yum install -yq https://dl.lamp.sh/linux/rhel/el8/x86_64/teddysun-release-1.0-1.el8.noarch.rpm"
+        _error_detect "dnf install -yq https://dl.lamp.sh/linux/rhel/el8/x86_64/teddysun-release-1.0-1.el8.noarch.rpm"
     fi
     if get_rhelversion 9; then
-        _error_detect "yum-config-manager --enable crb"
+        _error_detect "dnf config-manager --enable crb"
         _info "Set enable CRB Repository completed"
         echo "set enable-bracketed-paste off" >>/etc/inputrc
-        _error_detect "yum install -y https://dl.lamp.sh/linux/rhel/el9/x86_64/teddysun-release-1.0-1.el9.noarch.rpm"
+        _error_detect "dnf install -y https://dl.lamp.sh/linux/rhel/el9/x86_64/teddysun-release-1.0-1.el9.noarch.rpm"
     fi
-    _error_detect "yum makecache"
-    _error_detect "yum install -yq vim tar zip unzip net-tools bind-utils screen git virt-what wget whois firewalld mtr traceroute iftop htop jq tree"
-    _error_detect "yum install -yq libnghttp2 libnghttp2-devel"
+    _error_detect "dnf makecache"
+    _error_detect "dnf install -yq vim tar zip unzip net-tools bind-utils screen git virt-what wget whois firewalld mtr traceroute iftop htop jq tree"
+    _error_detect "dnf install -yq libnghttp2 libnghttp2-devel"
     # Replaced local curl from teddysun linux Repository
-    _error_detect "yum install -yq curl libcurl libcurl-devel"
+    _error_detect "dnf install -yq curl libcurl libcurl-devel"
     if [ -s "/etc/selinux/config" ] && grep 'SELINUX=enforcing' /etc/selinux/config; then
         sed -i 's@^SELINUX.*@SELINUX=disabled@g' /etc/selinux/config
         setenforce 0
@@ -376,7 +376,7 @@ sleep 3
 clear
 _info "LCMP (Linux + Caddy + MariaDB + PHP) installation start"
 if check_sys rhel; then
-    _error_detect "yum install -yq caddy"
+    _error_detect "dnf install -yq caddy"
 elif check_sys debian || check_sys ubuntu; then
     _error_detect "curl -fsSL https://dl.lamp.sh/shadowsocks/DEB-GPG-KEY-Teddysun | gpg --dearmor --yes -o /usr/share/keyrings/deb-gpg-key-teddysun.gpg"
     _error_detect "chmod a+r /usr/share/keyrings/deb-gpg-key-teddysun.gpg"
@@ -407,8 +407,8 @@ _info "./mariadb_repo_setup.sh --mariadb-server-version=mariadb-${mariadb_ver}"
 ./mariadb_repo_setup.sh --mariadb-server-version=mariadb-${mariadb_ver} >/dev/null 2>&1
 _error_detect "rm -f mariadb_repo_setup.sh"
 if check_sys rhel; then
-    _error_detect "yum config-manager --disable mariadb-maxscale"
-    _error_detect "yum install -y MariaDB-common MariaDB-server MariaDB-client MariaDB-shared MariaDB-backup"
+    _error_detect "dnf config-manager --disable mariadb-maxscale"
+    _error_detect "dnf install -y MariaDB-common MariaDB-server MariaDB-client MariaDB-shared MariaDB-backup"
     mariadb_cnf="/etc/my.cnf.d/server.cnf"
 elif check_sys debian || check_sys ubuntu; then
     _error_detect "apt-get install -y mariadb-common mariadb-server mariadb-client mariadb-backup"
@@ -449,17 +449,17 @@ if check_sys rhel; then
     php_sock="unix//run/php-fpm/www.sock"
     sock_location="/var/lib/mysql/mysql.sock"
     if get_rhelversion 8; then
-        _error_detect "yum install -yq https://rpms.remirepo.net/enterprise/remi-release-8.rpm"
+        _error_detect "dnf install -yq https://rpms.remirepo.net/enterprise/remi-release-8.rpm"
     fi
     if get_rhelversion 9; then
-        _error_detect "yum install -yq https://rpms.remirepo.net/enterprise/remi-release-9.rpm"
+        _error_detect "dnf install -yq https://rpms.remirepo.net/enterprise/remi-release-9.rpm"
     fi
-    _error_detect "yum module reset -yq php"
-    _error_detect "yum module install -yq php:remi-${php_ver}"
-    _error_detect "yum install -yq php-common php-fpm php-cli php-bcmath php-embedded php-gd php-imap php-mysqlnd php-dba php-pdo php-pdo-dblib"
-    _error_detect "yum install -yq php-pgsql php-odbc php-enchant php-gmp php-intl php-ldap php-snmp php-soap php-tidy php-opcache php-process"
-    _error_detect "yum install -yq php-pspell php-shmop php-sodium php-ffi php-brotli php-lz4 php-xz php-zstd php-pecl-rar"
-    _error_detect "yum install -yq php-pecl-imagick-im7 php-pecl-zip php-pecl-mongodb php-pecl-grpc php-pecl-yaml php-pecl-uuid composer"
+    _error_detect "dnf module reset -yq php"
+    _error_detect "dnf module install -yq php:remi-${php_ver}"
+    _error_detect "dnf install -yq php-common php-fpm php-cli php-bcmath php-embedded php-gd php-imap php-mysqlnd php-dba php-pdo php-pdo-dblib"
+    _error_detect "dnf install -yq php-pgsql php-odbc php-enchant php-gmp php-intl php-ldap php-snmp php-soap php-tidy php-opcache php-process"
+    _error_detect "dnf install -yq php-pspell php-shmop php-sodium php-ffi php-brotli php-lz4 php-xz php-zstd php-pecl-rar php-pecl-swoole6"
+    _error_detect "dnf install -yq php-pecl-imagick-im7 php-pecl-zip php-pecl-mongodb php-pecl-grpc php-pecl-yaml php-pecl-uuid composer"
 elif check_sys debian || check_sys ubuntu; then
     php_conf="/etc/php/${php_ver}/fpm/pool.d/www.conf"
     php_ini="/etc/php/${php_ver}/fpm/php.ini"
@@ -478,7 +478,7 @@ elif check_sys debian || check_sys ubuntu; then
     _error_detect "apt-get install -y libphp${php_ver}-embed php${php_ver}-bcmath php${php_ver}-gd php${php_ver}-imap php${php_ver}-mysql php${php_ver}-dba php${php_ver}-mongodb php${php_ver}-sybase"
     _error_detect "apt-get install -y php${php_ver}-pgsql php${php_ver}-odbc php${php_ver}-enchant php${php_ver}-gmp php${php_ver}-intl php${php_ver}-ldap php${php_ver}-snmp php${php_ver}-soap"
     _error_detect "apt-get install -y php${php_ver}-mbstring php${php_ver}-curl php${php_ver}-pspell php${php_ver}-xml php${php_ver}-zip php${php_ver}-bz2 php${php_ver}-lz4 php${php_ver}-zstd"
-    _error_detect "apt-get install -y php${php_ver}-tidy php${php_ver}-sqlite3 php${php_ver}-imagick php${php_ver}-grpc php${php_ver}-yaml php${php_ver}-uuid"
+    _error_detect "apt-get install -y php${php_ver}-tidy php${php_ver}-sqlite3 php${php_ver}-imagick php${php_ver}-grpc php${php_ver}-yaml php${php_ver}-uuid php${php_ver}-swoole"
     _error_detect "mkdir -m770 /var/lib/php/{session,wsdlcache,opcache}"
 fi
 _info "PHP installation completed"

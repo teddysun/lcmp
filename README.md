@@ -8,7 +8,7 @@
 
 LCMP (Linux + Caddy + MariaDB + PHP) is a powerful bash script for the installation of Caddy2 + MariaDB + PHP and so on.
 
-You can install Caddy2 + MariaDB + PHP in a smaller memory VPS by `yum` / `dnf` or `apt-get` command, Just need to input numbers to choose what you want to install before installation.
+You can install Caddy2 + MariaDB + PHP in a smaller memory VPS by `dnf` or `apt-get` command, Just need to input numbers to choose what you want to install before installation.
 
 And all things will be done in a few minutes.
 
@@ -58,7 +58,7 @@ And all things will be done in a few minutes.
 
 - If your server's OS: Enterprise Linux 8 / 9
 ```bash
-yum -y install wget git
+dnf -y install wget git
 git clone https://github.com/teddysun/lcmp.git
 cd lcmp
 chmod 755 *.sh
@@ -78,11 +78,18 @@ chmod 755 *.sh
 
 - If your server's OS: Enterprise Linux 8 / 9
 ```bash
-yum update -y caddy
-yum update -y MariaDB-*
-yum update -y php-*
+dnf update -y caddy
+dnf update -y MariaDB-*
+dnf update -y php-*
 # Change PHP directory's group for Caddy again if you upgraded PHP version
 chown root:caddy /var/lib/php/{session,wsdlcache,opcache}
+```
+
+- How to upgrade PHP **MAJOR** version in Enterprise Linux 8 / 9
+
+Example: From PHP 8.3 upgrade to 8.4
+```bash
+dnf module switch-to php:remi-8.4
 ```
 
 - If your server's OS: Debian 11+ / Ubuntu 20.04+
@@ -98,9 +105,9 @@ apt-get install --only-upgrade -y php${php_ver}-*
 
 - If your server's OS: Enterprise Linux 8 / 9
 ```bash
-yum remove -y caddy
-yum remove -y MariaDB-*
-yum remove -y php-*
+dnf remove -y caddy
+dnf remove -y MariaDB-*
+dnf remove -y php-*
 ```
 
 - If your server's OS: Debian 11+ / Ubuntu 20.04+
