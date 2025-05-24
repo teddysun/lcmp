@@ -4,8 +4,8 @@
 # LCMP (Linux + Caddy + MariaDB + PHP) installation
 #
 # Supported OS:
-# Enterprise Linux 8 (CentOS 8, RHEL 8, Rocky Linux 8, AlmaLinux 8, Oracle Linux 8)
-# Enterprise Linux 9 (CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9, Oracle Linux 9)
+# Enterprise Linux 8 (CentOS Stream 8, RHEL 8, Rocky Linux 8, AlmaLinux 8, Oracle Linux 8)
+# Enterprise Linux 9 (CentOS Stream 9, RHEL 9, Rocky Linux 9, AlmaLinux 9, Oracle Linux 9)
 # Debian 11
 # Debian 12
 # Ubuntu 20.04
@@ -289,22 +289,29 @@ _info "Press any key to start...or Press Ctrl+C to cancel"
 char=$(get_char)
 
 _info "VPS initialization start"
-_error_detect "rm -f /etc/localtime"
-_error_detect "ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime"
 if check_sys rhel; then
-    _error_detect "dnf install -yq yum-utils epel-release"
-    _error_detect "dnf config-manager --enable epel"
     if get_rhelversion 8; then
-        dnf config-manager --enable powertools >/dev/null 2>&1 || dnf config-manager --enable PowerTools >/dev/null 2>&1
-        _info "Set enable PowerTools Repository completed"
+        _error_detect "dnf install -yq https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm"
+        if _exists "subscription-manager"; then
+            _error_detect "subscription-manager repos --enable codeready-builder-for-rhel-8-$(arch)-rpms"
+        else
+            _error_detect "dnf config-manager --set-enabled powertools"
+        fi
         _error_detect "dnf install -yq https://dl.lamp.sh/linux/rhel/el8/x86_64/teddysun-release-1.0-1.el8.noarch.rpm"
     fi
     if get_rhelversion 9; then
-        _error_detect "dnf config-manager --enable crb"
-        _info "Set enable CRB Repository completed"
-        echo "set enable-bracketed-paste off" >>/etc/inputrc
-        _error_detect "dnf install -y https://dl.lamp.sh/linux/rhel/el9/x86_64/teddysun-release-1.0-1.el9.noarch.rpm"
+        _error_detect "dnf install -yq https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
+        if _exists "subscription-manager"; then
+            _error_detect "subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms"
+        else
+            _error_detect "dnf config-manager --set-enabled crb"
+        fi
+        _error_detect "dnf install -yq https://dl.lamp.sh/linux/rhel/el9/x86_64/teddysun-release-1.0-1.el9.noarch.rpm"
+        if ! grep -q "set enable-bracketed-paste off" /etc/inputrc; then
+            echo "set enable-bracketed-paste off" >>/etc/inputrc
+        fi
     fi
+
     _error_detect "dnf makecache"
     _error_detect "dnf install -yq vim tar zip unzip net-tools bind-utils screen git virt-what wget whois firewalld mtr traceroute iftop htop jq tree"
     _error_detect "dnf install -yq libnghttp2 libnghttp2-devel"
