@@ -429,6 +429,12 @@ _info "Set Caddy completed"
 
 _error_detect "curl -sLo mariadb_repo_setup.sh https://dl.lamp.sh/files/mariadb_repo_setup.sh"
 _error_detect "chmod +x mariadb_repo_setup.sh"
+# Fixed MariaDB package signing keys import error
+if get_rhelversion 10; then
+    if _exists "update-crypto-policies"; then
+        _error_detect "update-crypto-policies --set LEGACY"
+    fi
+fi
 _info "./mariadb_repo_setup.sh --mariadb-server-version=mariadb-${mariadb_ver}"
 ./mariadb_repo_setup.sh --mariadb-server-version=mariadb-${mariadb_ver} >/dev/null 2>&1
 _error_detect "rm -f mariadb_repo_setup.sh"
