@@ -29,8 +29,10 @@ And all things will be done in a few minutes.
 
 - Enterprise Linux 8 (CentOS Stream 8, RHEL 8, Rocky Linux 8, AlmaLinux 8, Oracle Linux 8)
 - Enterprise Linux 9 (CentOS Stream 9, RHEL 9, Rocky Linux 9, AlmaLinux 9, Oracle Linux 9)
+- Enterprise Linux 10 (CentOS Stream 10, RHEL 10, Rocky Linux 10, AlmaLinux 10, Oracle Linux 10)
 - Debian 11
 - Debian 12
+- Debian 13
 - Ubuntu 20.04
 - Ubuntu 22.04
 - Ubuntu 24.04
@@ -46,7 +48,7 @@ And all things will be done in a few minutes.
 ## Supported Software
 
 - Caddy 2 ※ Caddy package provided by [Teddysun Repository](https://dl.lamp.sh/shadowsocks/)
-- MariaDB 10.11, 11.4 ※ MariaDB packages provided by [MariaDB Repository](https://dlm.mariadb.com/browse/mariadb_server/)
+- MariaDB 10.11, 11.4, 11.8 ※ MariaDB packages provided by [MariaDB Repository](https://dlm.mariadb.com/browse/mariadb_server/)
 - PHP 7.4, 8.0, 8.1, 8.2, 8.3, 8.4 ※ PHP rpm packages provided by [Remi Repository](https://rpms.remirepo.net/), deb packages provided by [deb.sury.org](https://deb.sury.org/)
 
 ## Supported Architecture
@@ -56,7 +58,7 @@ And all things will be done in a few minutes.
 
 ## Installation
 
-- If your server's OS: Enterprise Linux 8 / 9
+- If your server's OS: Enterprise Linux 8 / 9 / 10
 ```bash
 dnf -y install wget git
 git clone https://github.com/teddysun/lcmp.git
@@ -65,7 +67,7 @@ chmod 755 *.sh
 ./lcmp.sh 2>&1 | tee lcmp.log
 ```
 
-- If your server's OS: Debian 11+ / Ubuntu 20.04+
+- If your server's OS: Debian 11 ~ 13 / Ubuntu 20.04 ~ 24.04
 ```bash
 apt-get -y install wget git
 git clone https://github.com/teddysun/lcmp.git
@@ -76,7 +78,7 @@ chmod 755 *.sh
 
 ## Upgrade
 
-- If your server's OS: Enterprise Linux 8 / 9
+- If your server's OS: Enterprise Linux 8 / 9 / 10
 ```bash
 dnf update -y caddy
 dnf update -y MariaDB-*
@@ -85,37 +87,37 @@ dnf update -y php-*
 chown root:caddy /var/lib/php/{session,wsdlcache,opcache}
 ```
 
-- How to upgrade PHP **MAJOR** version in Enterprise Linux 8 / 9
+- How to upgrade PHP **MAJOR** version in Enterprise Linux 8 / 9 / 10
 
 Example: From PHP 8.3 upgrade to 8.4
 ```bash
 dnf module switch-to php:remi-8.4
 ```
 
-- If your server's OS: Debian 11+ / Ubuntu 20.04+
+- If your server's OS: Debian 11 ~ 13 / Ubuntu 20.04 ~ 24.04
 ```bash
 apt-get install --only-upgrade -y caddy
 apt-get install --only-upgrade -y mariadb-*
 # for example: php_ver=[7.4|8.0|8.1|8.2|8.3|8.4]
-php_ver="8.2"
+php_ver="8.3"
 apt-get install --only-upgrade -y php${php_ver}-*
 ```
 
 ## Uninstall
 
-- If your server's OS: Enterprise Linux 8 / 9
+- If your server's OS: Enterprise Linux 8 / 9 / 10
 ```bash
 dnf remove -y caddy
 dnf remove -y MariaDB-*
 dnf remove -y php-*
 ```
 
-- If your server's OS: Debian 11+ / Ubuntu 20.04+
+- If your server's OS: Debian 11 ~ 13 / Ubuntu 20.04 ~ 24.04
 ```bash
 apt-get remove -y caddy
 apt-get remove -y mariadb-*
 # for example: php_ver=[7.4|8.0|8.1|8.2|8.3|8.4]
-php_ver="8.2"
+php_ver="8.3"
 apt-get remove -y php${php_ver}-*
 ```
 

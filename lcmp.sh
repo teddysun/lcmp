@@ -6,8 +6,10 @@
 # Supported OS:
 # Enterprise Linux 8 (CentOS Stream 8, RHEL 8, Rocky Linux 8, AlmaLinux 8, Oracle Linux 8)
 # Enterprise Linux 9 (CentOS Stream 9, RHEL 9, Rocky Linux 9, AlmaLinux 9, Oracle Linux 9)
+# Enterprise Linux 10 (CentOS Stream 10, RHEL 10, Rocky Linux 10, AlmaLinux 10, Oracle Linux 10)
 # Debian 11
 # Debian 12
+# Debian 13
 # Ubuntu 20.04
 # Ubuntu 22.04
 # Ubuntu 24.04
@@ -199,8 +201,8 @@ check_bbr_status() {
 [ ${EUID} -ne 0 ] && _red "This script must be run as root!\n" && exit 1
 
 # Check OS
-if ! get_rhelversion 8 && ! get_rhelversion 9 &&
-   ! get_debianversion 11 && ! get_debianversion 12 &&
+if ! get_rhelversion 8 && ! get_rhelversion 9 && ! get_rhelversion 10 &&
+   ! get_debianversion 11 && ! get_debianversion 12 && ! get_debianversion 13 &&
    ! get_ubuntuversion 20.04 && ! get_ubuntuversion 22.04 && ! get_ubuntuversion 24.04; then
     _error "Not supported OS, please change OS to Enterprise Linux 8+ or Debian 11+ or Ubuntu 20.04+ and try again."
 fi
@@ -210,6 +212,7 @@ while true; do
     _info "Please choose a version of the MariaDB:"
     _info "$(_green 1). MariaDB 10.11"
     _info "$(_green 2). MariaDB 11.4"
+    _info "$(_green 3). MariaDB 11.8"
     read -r -p "[$(date)] Please input a number: (Default 2) " mariadb_version
     [ -z "${mariadb_version}" ] && mariadb_version=2
     case "${mariadb_version}" in
@@ -221,8 +224,12 @@ while true; do
         mariadb_ver="11.4"
         break
         ;;
+    3)
+        mariadb_ver="11.8"
+        break
+        ;;
     *)
-        _info "Input error! Please only input a number 1 2"
+        _info "Input error! Please only input a number 1 2 3"
         ;;
     esac
 done
@@ -307,6 +314,18 @@ if check_sys rhel; then
             _error_detect "dnf config-manager --set-enabled crb"
         fi
         _error_detect "dnf install -yq https://dl.lamp.sh/linux/rhel/el9/x86_64/teddysun-release-1.0-1.el9.noarch.rpm"
+        if ! grep -q "set enable-bracketed-paste off" /etc/inputrc; then
+            echo "set enable-bracketed-paste off" >>/etc/inputrc
+        fi
+    fi
+    if get_rhelversion 10; then
+        _error_detect "dnf install -yq https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm"
+        if _exists "subscription-manager"; then
+            _error_detect "subscription-manager repos --enable codeready-builder-for-rhel-10-$(arch)-rpms"
+        else
+            _error_detect "dnf config-manager --set-enabled crb"
+        fi
+        _error_detect "dnf install -yq https://dl.lamp.sh/linux/rhel/el10/x86_64/teddysun-release-1.0-1.el10.noarch.rpm"
         if ! grep -q "set enable-bracketed-paste off" /etc/inputrc; then
             echo "set enable-bracketed-paste off" >>/etc/inputrc
         fi
@@ -460,6 +479,9 @@ if check_sys rhel; then
     fi
     if get_rhelversion 9; then
         _error_detect "dnf install -yq https://rpms.remirepo.net/enterprise/remi-release-9.rpm"
+    fi
+    if get_rhelversion 10; then
+        _error_detect "dnf install -yq https://rpms.remirepo.net/enterprise/remi-release-10.rpm"
     fi
     _error_detect "dnf module reset -yq php"
     _error_detect "dnf module install -yq php:remi-${php_ver}"

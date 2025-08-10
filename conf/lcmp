@@ -6,8 +6,10 @@
 # Supported OS:
 # Enterprise Linux 8 (CentOS 8, RHEL 8, Rocky Linux 8, AlmaLinux 8, Oracle Linux 8)
 # Enterprise Linux 9 (CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9, Oracle Linux 9)
+# Enterprise Linux 10 (CentOS Stream 10, RHEL 10, Rocky Linux 10, AlmaLinux 10, Oracle Linux 10)
 # Debian 11
 # Debian 12
+# Debian 13
 # Ubuntu 20.04
 # Ubuntu 22.04
 # Ubuntu 24.04
@@ -353,7 +355,7 @@ del_database() {
         _error "MariaDB System Database $(_red "${database_name}") can not be delete."
     fi
     _info "Your will delete a MariaDB database and a user with same name: ${database_name}"
-    _info "Wait 10 seconds, Press Ctrl+c to cancel ..."
+    _info "Wait 10 seconds, Press ctrl+c to cancel ..."
     _sleep_sec 10
     cat >/tmp/.del.mysql.sql<<EOF
 DROP USER '${database_name}'@'127.0.0.1';
