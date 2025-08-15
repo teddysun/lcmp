@@ -334,6 +334,7 @@ if check_sys rhel; then
     _error_detect "dnf makecache"
     _error_detect "dnf install -yq vim tar zip unzip net-tools bind-utils screen git virt-what wget whois firewalld mtr traceroute iftop htop jq tree"
     _error_detect "dnf install -yq libnghttp2 libnghttp2-devel"
+    _error_detect "dnf install -yq c-ares c-ares-devel"
     # Replaced local curl from teddysun linux Repository
     _error_detect "dnf install -yq curl libcurl libcurl-devel"
     if [ -s "/etc/selinux/config" ] && grep 'SELINUX=enforcing' /etc/selinux/config; then
