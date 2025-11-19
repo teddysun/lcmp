@@ -15,39 +15,46 @@
 # Ubuntu 24.04
 #
 # Copyright (C) 2023 - 2025 Teddysun <i@teddysun.com>
-#
+
+# Trap interrupt signals
 trap _exit INT QUIT TERM
 
+# Get the current directory of the script
 cur_dir="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
 
+# Color output functions
 _red() {
-    printf '\033[1;31;31m%b\033[0m' "$1"
+    printf '\033[1;31m%b\033[0m' "$1"
 }
 
 _green() {
-    printf '\033[1;31;32m%b\033[0m' "$1"
+    printf '\033[1;32m%b\033[0m' "$1"
 }
 
 _yellow() {
-    printf '\033[1;31;33m%b\033[0m' "$1"
+    printf '\033[1;33m%b\033[0m' "$1"
 }
 
+# Print arguments with timestamp
 _printargs() {
     printf -- "%s" "[$(date)] "
     printf -- "%s" "$1"
     printf "\n"
 }
 
+# Info message
 _info() {
     _printargs "$@"
 }
 
+# Warning message
 _warn() {
     printf -- "%s" "[$(date)] "
     _yellow "$1"
     printf "\n"
 }
 
+# Error message and exit
 _error() {
     printf -- "%s" "[$(date)] "
     _red "$1"
@@ -55,6 +62,7 @@ _error() {
     exit 2
 }
 
+# Exit handler
 _exit() {
     printf "\n"
     _red "$0 has been terminated."
@@ -62,6 +70,7 @@ _exit() {
     exit 1
 }
 
+# Check if a command exists
 _exists() {
     local cmd="$1"
     if eval type type >/dev/null 2>&1; then
@@ -75,14 +84,16 @@ _exists() {
     return ${rt}
 }
 
+# Detect command execution errors
 _error_detect() {
     local cmd="$1"
     _info "${cmd}"
     if ! eval "${cmd}" 1>/dev/null; then
-        _error "Execution command (${cmd}) failed, please check it and try again."
+        _error "Command execution failed: ${cmd}, Please check and try again."
     fi
 }
 
+# Check the operating system
 check_sys() {
     local value="$1"
     local release=''
@@ -108,22 +119,14 @@ check_sys() {
     fi
 }
 
-get_char() {
-    SAVEDSTTY=$(stty -g)
-    stty -echo
-    stty cbreak
-    dd if=/dev/tty bs=1 count=1 2>/dev/null
-    stty -raw
-    stty echo
-    stty "${SAVEDSTTY}"
-}
-
+# Get OS information
 get_opsy() {
     [ -f /etc/redhat-release ] && awk '{print ($1,$3~/^[0-9]/?$3:$4)}' /etc/redhat-release && return
     [ -f /etc/os-release ] && awk -F'[= "]' '/PRETTY_NAME/{print $3,$4,$5}' /etc/os-release && return
     [ -f /etc/lsb-release ] && awk -F'[="]+' '/DESCRIPTION/{print $2}' /etc/lsb-release && return
 }
 
+# Get RHEL version
 get_rhelversion() {
     if check_sys rhel; then
         local version
@@ -141,6 +144,7 @@ get_rhelversion() {
     fi
 }
 
+# Get Debian version
 get_debianversion() {
     if check_sys debian; then
         local version
@@ -158,6 +162,7 @@ get_debianversion() {
     fi
 }
 
+# Get Ubuntu version
 get_ubuntuversion() {
     if check_sys ubuntu; then
         local version
@@ -173,6 +178,7 @@ get_ubuntuversion() {
     fi
 }
 
+# Check kernel version
 version_ge() {
     test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)" == "$1"
 }
@@ -197,19 +203,19 @@ check_bbr_status() {
     fi
 }
 
-# Check user
+# Check if the script is run as root
 [ ${EUID} -ne 0 ] && _red "This script must be run as root!\n" && exit 1
 
-# Check OS
+# Check OS support
 if ! get_rhelversion 8 && ! get_rhelversion 9 && ! get_rhelversion 10 &&
    ! get_debianversion 11 && ! get_debianversion 12 && ! get_debianversion 13 &&
    ! get_ubuntuversion 20.04 && ! get_ubuntuversion 22.04 && ! get_ubuntuversion 24.04; then
-    _error "Not supported OS, please change OS to Enterprise Linux 8+ or Debian 11+ or Ubuntu 20.04+ and try again."
+    _error "Unsupported OS. Please switch to Enterprise Linux 8+, Debian 11+, or Ubuntu 20.04+ and try again."
 fi
 
 # Choose MariaDB version
 while true; do
-    _info "Please choose a version of the MariaDB:"
+    _info "Please choose a version of MariaDB:"
     _info "$(_green 1). MariaDB 10.11"
     _info "$(_green 2). MariaDB 11.4"
     _info "$(_green 3). MariaDB 11.8"
@@ -249,7 +255,7 @@ _info "---------------------------"
 
 # Choose PHP version
 while true; do
-    _info "Please choose a version of the PHP:"
+    _info "Please choose a version of PHP:"
     _info "$(_green 1). PHP 7.4"
     _info "$(_green 2). PHP 8.0"
     _info "$(_green 3). PHP 8.1"
@@ -292,7 +298,17 @@ _info "---------------------------"
 _info "PHP version = $(_red "${php_ver}")"
 _info "---------------------------"
 
-_info "Press any key to start...or Press Ctrl+C to cancel"
+# Prompt user to start or cancel
+_info "Press any key to start... or Press Ctrl+C to cancel"
+get_char() {
+    SAVEDSTTY=$(stty -g)
+    stty -echo
+    stty cbreak
+    dd if=/dev/tty bs=1 count=1 2>/dev/null
+    stty -raw
+    stty echo
+    stty "${SAVEDSTTY}"
+}
 char=$(get_char)
 
 _info "VPS initialization start"
@@ -335,16 +351,17 @@ if check_sys rhel; then
     _error_detect "dnf install -yq vim tar zip unzip net-tools bind-utils screen git virt-what wget whois firewalld mtr traceroute iftop htop jq tree"
     _error_detect "dnf install -yq libnghttp2 libnghttp2-devel"
     _error_detect "dnf install -yq c-ares c-ares-devel"
-    # Replaced local curl from teddysun linux Repository
     _error_detect "dnf install -yq curl libcurl libcurl-devel"
-    if [ -s "/etc/selinux/config" ] && grep 'SELINUX=enforcing' /etc/selinux/config; then
-        sed -i 's@^SELINUX.*@SELINUX=disabled@g' /etc/selinux/config
+    # Handle SELinux
+    if [ -s "/etc/selinux/config" ] && grep -q 'SELINUX=enforcing' /etc/selinux/config; then
+        sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config
         setenforce 0
-        _info "Disable SElinux completed"
+        _info "Disabled SELinux"
     fi
+    # Remove cockpit related file
     if [ -s "/etc/motd.d/cockpit" ]; then
         rm -f /etc/motd.d/cockpit
-        _info "Delete /etc/motd.d/cockpit completed"
+        _info "Deleted /etc/motd.d/cockpit"
     fi
     if systemctl status firewalld >/dev/null 2>&1; then
         default_zone="$(firewall-cmd --get-default-zone)"
@@ -353,11 +370,11 @@ if check_sys rhel; then
         # Enabled udp 443 port for Caddy HTTP/3 feature
         firewall-cmd --permanent --zone="${default_zone}" --add-port=443/udp >/dev/null 2>&1
         firewall-cmd --reload >/dev/null 2>&1
-        sed -i 's@AllowZoneDrifting=yes@AllowZoneDrifting=no@' /etc/firewalld/firewalld.conf
+        sed -i 's/AllowZoneDrifting=yes/AllowZoneDrifting=no/' /etc/firewalld/firewalld.conf
         _error_detect "systemctl restart firewalld"
-        _info "Set firewall completed"
+        _info "Firewall configured"
     else
-        _warn "firewalld looks like not running, skip setting up firewall"
+        _warn "firewalld is not running. Skipping firewall configuration."
     fi
 elif check_sys debian || check_sys ubuntu; then
     _error_detect "apt-get update"
@@ -368,7 +385,7 @@ elif check_sys debian || check_sys ubuntu; then
         _error_detect "ufw allow https"
         _error_detect "ufw allow 443/udp"
     else
-        _warn "ufw looks like not running, skip setting up firewall"
+        _warn "ufw is not running. Skipping firewall configuration."
     fi
 fi
 
@@ -383,8 +400,12 @@ net.ipv4.tcp_congestion_control = bbr
 net.core.rmem_max = 2500000
 EOF
         sysctl -p >/dev/null 2>&1
-        _info "Set bbr completed"
+        _info "BBR configured"
+    else
+        _info "BBR is already enabled. Skipping configuration."
     fi
+else
+    _warn "Kernel version is below 4.9. Skipping BBR configuration."
 fi
 
 if systemctl status systemd-journald >/dev/null 2>&1; then
@@ -428,9 +449,10 @@ _error_detect "cp -f ${cur_dir}/conf/index.html /data/www/default/"
 _error_detect "cp -f ${cur_dir}/conf/lcmp.png /data/www/default/"
 _info "Set Caddy completed"
 
+_info "Downloading and running MariaDB repository setup script"
 _error_detect "curl -sLo mariadb_repo_setup.sh https://dl.lamp.sh/files/mariadb_repo_setup.sh"
 _error_detect "chmod +x mariadb_repo_setup.sh"
-# Fixed MariaDB package signing keys import error
+# Fix MariaDB package signing key import error
 if get_rhelversion 10; then
     if _exists "update-crypto-policies"; then
         _error_detect "update-crypto-policies --set LEGACY"
@@ -493,16 +515,17 @@ user     = root
 password = '${db_pass}'
 # THIS FILE WILL BE REMOVED IN A FUTURE DEBIAN RELEASE.
 EOF
-    chmod 600 /etc/mysql/debian.cnf
+        chmod 600 /etc/mysql/debian.cnf
     fi
 fi
+
 # Install phpMyAdmin
 _error_detect "wget -qO pma.tar.gz https://dl.lamp.sh/files/pma.tar.gz"
 _error_detect "tar zxf pma.tar.gz -C /data/www/default/"
 _error_detect "rm -f pma.tar.gz"
 _info "/usr/bin/mariadb -uroot -p 2>/dev/null < /data/www/default/pma/sql/create_tables.sql"
 /usr/bin/mariadb -uroot -p"${db_pass}" 2>/dev/null </data/www/default/pma/sql/create_tables.sql
-_info "Set MariaDB completed"
+_info "MariaDB configuration completed"
 
 if check_sys rhel; then
     php_conf="/etc/php-fpm.d/www.conf"
@@ -582,7 +605,7 @@ sed -i "s@^short_open_tag.*@short_open_tag = On@" "${php_ini}"
 sed -i "s#mysqli.default_socket.*#mysqli.default_socket = ${sock_location}#" "${php_ini}"
 sed -i "s#pdo_mysql.default_socket.*#pdo_mysql.default_socket = ${sock_location}#" "${php_ini}"
 _error_detect "chown root:caddy /var/lib/php/{session,wsdlcache,opcache}"
-_info "Set PHP completed"
+_info "PHP configuration completed"
 
 cat >"/etc/caddy/conf.d/default.conf" <<EOF
 :80 {
