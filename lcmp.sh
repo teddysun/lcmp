@@ -178,11 +178,30 @@ get_ubuntuversion() {
     fi
 }
 
-# Check kernel version
+get_char() {
+    SAVEDSTTY=$(stty -g)
+    stty -echo
+    stty cbreak
+    dd if=/dev/tty bs=1 count=1 2>/dev/null
+    stty -raw
+    stty echo
+    stty "${SAVEDSTTY}"
+}
+
+get_rhel_extra_repo() {
+    local ver=$1
+    case "$ver" in
+        8) echo "powertools" ;;
+        9|10) echo "crb" ;;
+        *) _error "Undefined RHEL version" ;;
+    esac
+}
+
 version_ge() {
     test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)" == "$1"
 }
 
+# Check kernel version
 check_kernel_version() {
     local kernel_version
     kernel_version=$(uname -r | cut -d- -f1)
@@ -193,6 +212,7 @@ check_kernel_version() {
     fi
 }
 
+# Check BBR status
 check_bbr_status() {
     local param
     param=$(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
@@ -200,6 +220,132 @@ check_bbr_status() {
         return 0
     else
         return 1
+    fi
+}
+
+set_rhel_inputrc() {
+    local ver=$1
+    case "$ver" in
+        9|10)
+            if ! grep -q "set enable-bracketed-paste off" /etc/inputrc; then
+                _error_detect "echo \"set enable-bracketed-paste off\" >>/etc/inputrc"
+            fi
+            ;;
+        *)
+            # Do nothing
+            ;;
+    esac
+}
+
+initialize_rhel() {
+    local rhel_ver
+    if get_rhelversion 8; then
+        rhel_ver=8
+    elif get_rhelversion 9; then
+        rhel_ver=9
+    elif get_rhelversion 10; then
+        rhel_ver=10
+    else
+        _error "Unsupported RHEL version"
+    fi
+
+    _error_detect "dnf install -yq https://dl.fedoraproject.org/pub/epel/epel-release-latest-${rhel_ver}.noarch.rpm"
+    if _exists "subscription-manager"; then
+        _error_detect "subscription-manager repos --enable codeready-builder-for-rhel-${rhel_ver}-$(arch)-rpms"
+    else
+        _error_detect "dnf config-manager --set-enabled $(get_rhel_extra_repo ${rhel_ver})"
+    fi
+    set_rhel_inputrc ${rhel_ver}
+    _error_detect "dnf install -yq https://dl.lamp.sh/linux/rhel/el${rhel_ver}/x86_64/teddysun-release-1.0-1.el${rhel_ver}.noarch.rpm"
+
+    _error_detect "dnf makecache"
+    _error_detect "dnf install -yq vim tar zip unzip net-tools bind-utils screen git virt-what wget whois firewalld mtr traceroute iftop htop jq tree"
+    _error_detect "dnf install -yq libnghttp2 libnghttp2-devel c-ares c-ares-devel curl libcurl libcurl-devel"
+    # Handle SELinux
+    if [ -s "/etc/selinux/config" ] && grep -q 'SELINUX=enforcing' /etc/selinux/config; then
+        sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config
+        setenforce 0
+        _info "Disabled SELinux"
+    fi
+    # Remove cockpit related file
+    if [ -s "/etc/motd.d/cockpit" ]; then
+        rm -f /etc/motd.d/cockpit
+        _info "Deleted /etc/motd.d/cockpit"
+    fi
+    if systemctl status firewalld >/dev/null 2>&1; then
+        default_zone="$(firewall-cmd --get-default-zone)"
+        firewall-cmd --permanent --add-service=https --zone="${default_zone}" >/dev/null 2>&1
+        firewall-cmd --permanent --add-service=http --zone="${default_zone}" >/dev/null 2>&1
+        # Enabled udp 443 port for Caddy HTTP/3 feature
+        firewall-cmd --permanent --zone="${default_zone}" --add-port=443/udp >/dev/null 2>&1
+        firewall-cmd --reload >/dev/null 2>&1
+        sed -i 's/AllowZoneDrifting=yes/AllowZoneDrifting=no/' /etc/firewalld/firewalld.conf
+        _error_detect "systemctl restart firewalld"
+        _info "Firewall configured"
+    else
+        _warn "firewalld is not running, skipping firewall configuration"
+    fi
+}
+
+initialize_deb() {
+    _error_detect "apt-get update"
+    _error_detect "apt-get -yq install lsb-release ca-certificates curl gnupg"
+    _error_detect "apt-get -yq install vim tar zip unzip net-tools bind9-utils screen git virt-what wget whois mtr traceroute iftop htop jq tree"
+    if ufw status >/dev/null 2>&1; then
+        _error_detect "ufw allow http"
+        _error_detect "ufw allow https"
+        _error_detect "ufw allow 443/udp"
+    else
+        _warn "ufw is not running, skipping firewall configuration"
+    fi
+}
+
+initialize_system() {
+    if check_sys rhel; then
+        initialize_rhel
+    elif check_sys debian || check_sys ubuntu; then
+        initialize_deb
+    else
+        _error "Unsupported OS"
+    fi
+}
+
+# Configure BBR
+configure_bbr() {
+    if check_kernel_version; then
+        if ! check_bbr_status; then
+            sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
+            sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
+            sed -i '/net.core.rmem_max/d' /etc/sysctl.conf
+            cat >>"/etc/sysctl.conf" <<EOF
+net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr
+net.core.rmem_max = 2500000
+EOF
+            sysctl -p >/dev/null 2>&1
+            _info "BBR configured"
+        else
+            _info "BBR is already enabled, skipping configuration"
+        fi
+    else
+        _warn "Kernel version is below 4.9, skipping BBR configuration"
+    fi
+}
+
+# Configure systemd-journald
+configure_journald() {
+    local journald_config
+    if systemctl status systemd-journald >/dev/null 2>&1; then
+        if [ -s "/etc/systemd/journald.conf" ]; then
+            journald_config="/etc/systemd/journald.conf"
+        elif [ -s "/usr/lib/systemd/journald.conf" ]; then
+            journald_config="/usr/lib/systemd/journald.conf"
+        fi
+        sed -i 's/^#\?Storage=.*/Storage=volatile/' ${journald_config}
+        sed -i 's/^#\?SystemMaxUse=.*/SystemMaxUse=16M/' ${journald_config}
+        sed -i 's/^#\?RuntimeMaxUse=.*/RuntimeMaxUse=16M/' ${journald_config}
+        _error_detect "systemctl restart systemd-journald"
+        _info "systemd-journald configuration completed"
     fi
 }
 
@@ -235,7 +381,7 @@ while true; do
         break
         ;;
     *)
-        _info "Input error! Please only input a number 1 2 3"
+        _info "Input error. Please input a number between 1 and 3"
         ;;
     esac
 done
@@ -290,7 +436,7 @@ while true; do
         break
         ;;
     *)
-        _info "Input error! Please only input a number 1 2 3 4 5 6"
+        _info "Input error. Please input a number between 1 and 6"
         ;;
     esac
 done
@@ -300,122 +446,12 @@ _info "---------------------------"
 
 # Prompt user to start or cancel
 _info "Press any key to start... or Press Ctrl+C to cancel"
-get_char() {
-    SAVEDSTTY=$(stty -g)
-    stty -echo
-    stty cbreak
-    dd if=/dev/tty bs=1 count=1 2>/dev/null
-    stty -raw
-    stty echo
-    stty "${SAVEDSTTY}"
-}
 char=$(get_char)
 
 _info "VPS initialization start"
-if check_sys rhel; then
-    if get_rhelversion 8; then
-        _error_detect "dnf install -yq https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm"
-        if _exists "subscription-manager"; then
-            _error_detect "subscription-manager repos --enable codeready-builder-for-rhel-8-$(arch)-rpms"
-        else
-            _error_detect "dnf config-manager --set-enabled powertools"
-        fi
-        _error_detect "dnf install -yq https://dl.lamp.sh/linux/rhel/el8/x86_64/teddysun-release-1.0-1.el8.noarch.rpm"
-    fi
-    if get_rhelversion 9; then
-        _error_detect "dnf install -yq https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
-        if _exists "subscription-manager"; then
-            _error_detect "subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms"
-        else
-            _error_detect "dnf config-manager --set-enabled crb"
-        fi
-        _error_detect "dnf install -yq https://dl.lamp.sh/linux/rhel/el9/x86_64/teddysun-release-1.0-1.el9.noarch.rpm"
-        if ! grep -q "set enable-bracketed-paste off" /etc/inputrc; then
-            echo "set enable-bracketed-paste off" >>/etc/inputrc
-        fi
-    fi
-    if get_rhelversion 10; then
-        _error_detect "dnf install -yq https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm"
-        if _exists "subscription-manager"; then
-            _error_detect "subscription-manager repos --enable codeready-builder-for-rhel-10-$(arch)-rpms"
-        else
-            _error_detect "dnf config-manager --set-enabled crb"
-        fi
-        _error_detect "dnf install -yq https://dl.lamp.sh/linux/rhel/el10/x86_64/teddysun-release-1.0-1.el10.noarch.rpm"
-        if ! grep -q "set enable-bracketed-paste off" /etc/inputrc; then
-            echo "set enable-bracketed-paste off" >>/etc/inputrc
-        fi
-    fi
-
-    _error_detect "dnf makecache"
-    _error_detect "dnf install -yq vim tar zip unzip net-tools bind-utils screen git virt-what wget whois firewalld mtr traceroute iftop htop jq tree"
-    _error_detect "dnf install -yq libnghttp2 libnghttp2-devel"
-    _error_detect "dnf install -yq c-ares c-ares-devel"
-    _error_detect "dnf install -yq curl libcurl libcurl-devel"
-    # Handle SELinux
-    if [ -s "/etc/selinux/config" ] && grep -q 'SELINUX=enforcing' /etc/selinux/config; then
-        sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config
-        setenforce 0
-        _info "Disabled SELinux"
-    fi
-    # Remove cockpit related file
-    if [ -s "/etc/motd.d/cockpit" ]; then
-        rm -f /etc/motd.d/cockpit
-        _info "Deleted /etc/motd.d/cockpit"
-    fi
-    if systemctl status firewalld >/dev/null 2>&1; then
-        default_zone="$(firewall-cmd --get-default-zone)"
-        firewall-cmd --permanent --add-service=https --zone="${default_zone}" >/dev/null 2>&1
-        firewall-cmd --permanent --add-service=http --zone="${default_zone}" >/dev/null 2>&1
-        # Enabled udp 443 port for Caddy HTTP/3 feature
-        firewall-cmd --permanent --zone="${default_zone}" --add-port=443/udp >/dev/null 2>&1
-        firewall-cmd --reload >/dev/null 2>&1
-        sed -i 's/AllowZoneDrifting=yes/AllowZoneDrifting=no/' /etc/firewalld/firewalld.conf
-        _error_detect "systemctl restart firewalld"
-        _info "Firewall configured"
-    else
-        _warn "firewalld is not running. Skipping firewall configuration."
-    fi
-elif check_sys debian || check_sys ubuntu; then
-    _error_detect "apt-get update"
-    _error_detect "apt-get -yq install lsb-release ca-certificates curl gnupg"
-    _error_detect "apt-get -yq install vim tar zip unzip net-tools bind9-utils screen git virt-what wget whois mtr traceroute iftop htop jq tree"
-    if ufw status >/dev/null 2>&1; then
-        _error_detect "ufw allow http"
-        _error_detect "ufw allow https"
-        _error_detect "ufw allow 443/udp"
-    else
-        _warn "ufw is not running. Skipping firewall configuration."
-    fi
-fi
-
-if check_kernel_version; then
-    if ! check_bbr_status; then
-        sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
-        sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
-        sed -i '/net.core.rmem_max/d' /etc/sysctl.conf
-        cat >>"/etc/sysctl.conf" <<EOF
-net.core.default_qdisc = fq
-net.ipv4.tcp_congestion_control = bbr
-net.core.rmem_max = 2500000
-EOF
-        sysctl -p >/dev/null 2>&1
-        _info "BBR configured"
-    else
-        _info "BBR is already enabled. Skipping configuration."
-    fi
-else
-    _warn "Kernel version is below 4.9. Skipping BBR configuration."
-fi
-
-if systemctl status systemd-journald >/dev/null 2>&1; then
-    sed -i 's/^#\?Storage=.*/Storage=volatile/' /etc/systemd/journald.conf
-    sed -i 's/^#\?SystemMaxUse=.*/SystemMaxUse=16M/' /etc/systemd/journald.conf
-    sed -i 's/^#\?RuntimeMaxUse=.*/RuntimeMaxUse=16M/' /etc/systemd/journald.conf
-    _error_detect "systemctl restart systemd-journald"
-    _info "Set systemd-journald completed"
-fi
-
+configure_bbr
+configure_journald
+initialize_system
 echo
 netstat -nxtulpe
 echo
