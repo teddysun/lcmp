@@ -252,6 +252,8 @@ initialize_rhel() {
     _error_detect "dnf install -yq https://dl.fedoraproject.org/pub/epel/epel-release-latest-${rhel_ver}.noarch.rpm"
     if _exists "subscription-manager"; then
         _error_detect "subscription-manager repos --enable codeready-builder-for-rhel-${rhel_ver}-$(arch)-rpms"
+    elif [ -s "/etc/yum.repos.d/oracle-linux-ol${rhel_ver}.repo" ]; then
+        _error_detect "dnf config-manager --set-enabled ol${rhel_ver}_codeready_builder"
     else
         _error_detect "dnf config-manager --set-enabled $(get_rhel_extra_repo ${rhel_ver})"
     fi
