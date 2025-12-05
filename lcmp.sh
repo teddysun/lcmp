@@ -450,14 +450,14 @@ _info "---------------------------"
 _info "Press any key to start... or Press Ctrl+C to cancel"
 char=$(get_char)
 
-_info "VPS initialization start"
+_info "Initialization start"
 configure_bbr
 configure_journald
 initialize_system
 echo
 netstat -nxtulpe
 echo
-_info "VPS initialization completed"
+_info "Initialization completed"
 sleep 3
 clear
 _info "LCMP (Linux + Caddy + MariaDB + PHP) installation start"
@@ -485,7 +485,7 @@ EOF
 _error_detect "cp -f ${cur_dir}/conf/favicon.ico /data/www/default/"
 _error_detect "cp -f ${cur_dir}/conf/index.html /data/www/default/"
 _error_detect "cp -f ${cur_dir}/conf/lcmp.png /data/www/default/"
-_info "Set Caddy completed"
+_info "Caddy configuration completed"
 
 _info "Downloading and running MariaDB repository setup script"
 _error_detect "curl -sLo mariadb_repo_setup.sh https://dl.lamp.sh/files/mariadb_repo_setup.sh"
