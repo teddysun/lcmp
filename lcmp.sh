@@ -504,10 +504,11 @@ if check_sys rhel; then
     _error_detect "dnf install -y MariaDB-common MariaDB-server MariaDB-client MariaDB-shared MariaDB-backup"
     mariadb_cnf="/etc/my.cnf.d/server.cnf"
 elif check_sys debian || check_sys ubuntu; then
-    if get_debianversion 13 && [ -f "/etc/apt/sources.list.d/mariadb.list" ]; then
-        # MariaDB MaxScale does not have a trixie Release file, disabled by default
-        sed -i 's|^deb \[arch=amd64,arm64\] https://dlm.mariadb.com/repo/maxscale/latest/apt trixie main|#&|' /etc/apt/sources.list.d/mariadb.list
+    if [ -f "/etc/apt/sources.list.d/mariadb.list" ]; then
+        # MariaDB MaxScale has been disabled by default because the public key is not available
+        sed -i 's|^deb \[arch=amd64,arm64\] https://dlm.mariadb.com/repo/maxscale/latest/apt|#&|' /etc/apt/sources.list.d/mariadb.list
     fi
+    _error_detect "apt-get update"
     _error_detect "apt-get install -y mariadb-common mariadb-server mariadb-client mariadb-backup"
     mariadb_cnf="/etc/mysql/mariadb.conf.d/50-server.cnf"
 fi
