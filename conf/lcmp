@@ -354,7 +354,7 @@ del_database() {
     list_database
     enter_database_name
     if [[ "${database_name}" == "information_schema" || "${database_name}" == "mysql" || "${database_name}" == "performance_schema" || "${database_name}" == "sys" ]]; then
-        _error "MariaDB System Database $(_red "${database_name}") can not be delete."
+        _error "MariaDB system database $(_red "${database_name}") cannot be deleted."
     fi
     _info "Your will delete a MariaDB database and a user with same name: ${database_name}"
     _info "Wait 10 seconds, Press ctrl+c to cancel ..."
@@ -362,7 +362,7 @@ del_database() {
     cat >/tmp/.del.mysql.sql<<EOF
 DROP USER '${database_name}'@'127.0.0.1';
 DROP USER '${database_name}'@'localhost';
-DROP DATABASE \`${database_name}\`;
+DROP DATABASE IF EXISTS \`${database_name}\`;
 FLUSH PRIVILEGES;
 EOF
     if /usr/bin/mariadb --defaults-file=/tmp/.my.cnf </tmp/.del.mysql.sql; then
