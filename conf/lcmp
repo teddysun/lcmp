@@ -431,13 +431,13 @@ lcmp_status() {
 }
 
 lcmp_version() {
-    _info "Caddy version:"
+    _info "$(_green "Caddy") version:"
     /usr/bin/caddy version
     echo
-    _info "MariaDB version:"
+    _info "$(_green "MariaDB") version:"
     /usr/bin/mariadb --version
     echo
-    _info "PHP version:"
+    _info "$(_green "PHP") version:"
     /usr/bin/php -v
 }
 
