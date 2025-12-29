@@ -49,7 +49,7 @@ And all things will be done in a few minutes.
 
 - Caddy 2 ※ Caddy package provided by [Teddysun Repository](https://dl.lamp.sh/shadowsocks/)
 - MariaDB 10.11, 11.4, 11.8 ※ MariaDB packages provided by [MariaDB Repository](https://dlm.mariadb.com/browse/mariadb_server/)
-- PHP 7.4, 8.0, 8.1, 8.2, 8.3, 8.4 ※ PHP rpm packages provided by [Remi Repository](https://rpms.remirepo.net/), deb packages provided by [deb.sury.org](https://deb.sury.org/)
+- PHP 7.4, 8.0, 8.1, 8.2, 8.3, 8.4, 8.5 ※ PHP rpm packages provided by [Remi Repository](https://rpms.remirepo.net/), deb packages provided by [deb.sury.org](https://deb.sury.org/)
 
 ## Supported Architecture
 
@@ -89,7 +89,7 @@ chown root:caddy /var/lib/php/{session,wsdlcache,opcache}
 
 - How to upgrade PHP **MAJOR** version in Enterprise Linux 8 / 9 / 10
 
-Example: From PHP 8.3 upgrade to 8.4
+Example: From PHP 8.3 to 8.4
 ```bash
 dnf module switch-to php:remi-8.4
 ```
@@ -98,8 +98,8 @@ dnf module switch-to php:remi-8.4
 ```bash
 apt-get install --only-upgrade -y caddy
 apt-get install --only-upgrade -y mariadb-*
-# for example: php_ver=[7.4|8.0|8.1|8.2|8.3|8.4]
-php_ver="8.3"
+# for example: php_ver=[7.4|8.0|8.1|8.2|8.3|8.4|8.5]
+php_ver="8.4"
 apt-get install --only-upgrade -y php${php_ver}-*
 ```
 
@@ -116,8 +116,8 @@ dnf remove -y php-*
 ```bash
 apt-get remove -y caddy
 apt-get remove -y mariadb-*
-# for example: php_ver=[7.4|8.0|8.1|8.2|8.3|8.4]
-php_ver="8.3"
+# for example: php_ver=[7.4|8.0|8.1|8.2|8.3|8.4|8.5]
+php_ver="8.4"
 apt-get remove -y php${php_ver}-*
 ```
 
