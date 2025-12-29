@@ -249,7 +249,7 @@ initialize_rhel() {
         _error "Unsupported RHEL version"
     fi
 
-    _error_detect "dnf install -yq https://dl.fedoraproject.org/pub/epel/epel-release-latest-${rhel_ver}.noarch.rpm"
+    _error_detect "dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${rhel_ver}.noarch.rpm"
     if _exists "subscription-manager"; then
         _error_detect "subscription-manager repos --enable codeready-builder-for-rhel-${rhel_ver}-$(arch)-rpms"
     elif [ -s "/etc/yum.repos.d/oracle-linux-ol${rhel_ver}.repo" ]; then
@@ -258,11 +258,11 @@ initialize_rhel() {
         _error_detect "dnf config-manager --set-enabled $(get_rhel_extra_repo ${rhel_ver})"
     fi
     set_rhel_inputrc ${rhel_ver}
-    _error_detect "dnf install -yq https://dl.lamp.sh/linux/rhel/el${rhel_ver}/x86_64/teddysun-release-1.0-1.el${rhel_ver}.noarch.rpm"
+    _error_detect "dnf install -y https://dl.lamp.sh/linux/rhel/el${rhel_ver}/x86_64/teddysun-release-1.0-1.el${rhel_ver}.noarch.rpm"
 
     _error_detect "dnf makecache"
-    _error_detect "dnf install -yq vim nano tar zip unzip net-tools screen git virt-what wget mtr traceroute iftop htop jq tree"
-    _error_detect "dnf install -yq libnghttp2 libnghttp2-devel c-ares c-ares-devel curl libcurl libcurl-devel"
+    _error_detect "dnf install -y vim nano tar zip unzip net-tools screen git virt-what wget mtr traceroute iftop htop jq tree"
+    _error_detect "dnf install -y libnghttp2 libnghttp2-devel c-ares c-ares-devel curl libcurl libcurl-devel"
     # Handle SELinux
     if [ -s "/etc/selinux/config" ] && grep -q 'SELINUX=enforcing' /etc/selinux/config; then
         sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config
@@ -291,8 +291,8 @@ initialize_rhel() {
 
 initialize_deb() {
     _error_detect "apt-get update"
-    _error_detect "apt-get -yq install lsb-release ca-certificates curl gnupg"
-    _error_detect "apt-get -yq install vim nano tar zip unzip net-tools screen git virt-what wget mtr traceroute iftop htop jq tree"
+    _error_detect "apt-get -y install lsb-release ca-certificates curl gnupg"
+    _error_detect "apt-get -y install vim nano tar zip unzip net-tools screen git virt-what wget mtr traceroute iftop htop jq tree"
     if ufw status >/dev/null 2>&1; then
         _error_detect "ufw allow http"
         _error_detect "ufw allow https"
@@ -411,6 +411,7 @@ while true; do
     _info "$(_green 4). PHP 8.2"
     _info "$(_green 5). PHP 8.3"
     _info "$(_green 6). PHP 8.4"
+    _info "$(_green 7). PHP 8.5"
     read -r -p "[$(date)] Please input a number: (Default 6) " php_version
     [ -z "${php_version}" ] && php_version=6
     case "${php_version}" in
@@ -438,8 +439,12 @@ while true; do
         php_ver="8.4"
         break
         ;;
+    7)
+        php_ver="8.5"
+        break
+        ;;
     *)
-        _info "Input error. Please input a number between 1 and 6"
+        _info "Input error. Please input a number between 1 and 7"
         ;;
     esac
 done
@@ -463,7 +468,7 @@ sleep 3
 clear
 _info "LCMP (Linux + Caddy + MariaDB + PHP) installation start"
 if check_sys rhel; then
-    _error_detect "dnf install -yq caddy"
+    _error_detect "dnf install -y caddy"
 elif check_sys debian || check_sys ubuntu; then
     _error_detect "curl -fsSL https://dl.lamp.sh/shadowsocks/DEB-GPG-KEY-Teddysun | gpg --dearmor --yes -o /usr/share/keyrings/deb-gpg-key-teddysun.gpg"
     _error_detect "chmod a+r /usr/share/keyrings/deb-gpg-key-teddysun.gpg"
@@ -574,20 +579,20 @@ if check_sys rhel; then
     php_sock="unix//run/php-fpm/www.sock"
     sock_location="/var/lib/mysql/mysql.sock"
     if get_rhelversion 8; then
-        _error_detect "dnf install -yq https://rpms.remirepo.net/enterprise/remi-release-8.rpm"
+        _error_detect "dnf install -y https://rpms.remirepo.net/enterprise/remi-release-8.rpm"
     fi
     if get_rhelversion 9; then
-        _error_detect "dnf install -yq https://rpms.remirepo.net/enterprise/remi-release-9.rpm"
+        _error_detect "dnf install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm"
     fi
     if get_rhelversion 10; then
-        _error_detect "dnf install -yq https://rpms.remirepo.net/enterprise/remi-release-10.rpm"
+        _error_detect "dnf install -y https://rpms.remirepo.net/enterprise/remi-release-10.rpm"
     fi
-    _error_detect "dnf module reset -yq php"
-    _error_detect "dnf module install -yq php:remi-${php_ver}"
-    _error_detect "dnf install -yq php-common php-fpm php-cli php-bcmath php-embedded php-gd php-imap php-mysqlnd php-dba php-pdo php-pdo-dblib"
-    _error_detect "dnf install -yq php-pgsql php-odbc php-enchant php-gmp php-intl php-ldap php-snmp php-soap php-tidy php-opcache php-process"
-    _error_detect "dnf install -yq php-pspell php-shmop php-sodium php-ffi php-brotli php-lz4 php-xz php-zstd php-pecl-rar php-pecl-swoole6"
-    _error_detect "dnf install -yq php-pecl-imagick-im7 php-pecl-zip php-pecl-mongodb php-pecl-grpc php-pecl-yaml php-pecl-uuid composer"
+    _error_detect "dnf module reset -y php"
+    _error_detect "dnf module install -y php:remi-${php_ver}"
+    _error_detect "dnf install -y php-common php-fpm php-cli php-bcmath php-embedded php-gd php-imap php-mysqlnd php-dba php-pdo php-pdo-dblib"
+    _error_detect "dnf install -y php-pgsql php-odbc php-enchant php-gmp php-intl php-ldap php-snmp php-soap php-tidy php-opcache php-process"
+    _error_detect "dnf install -y php-pspell php-shmop php-sodium php-ffi php-brotli php-lz4 php-xz php-zstd"
+    _error_detect "dnf install -y php-pecl-imagick-im7 php-pecl-zip php-pecl-rar php-pecl-grpc php-pecl-yaml php-pecl-uuid"
 elif check_sys debian || check_sys ubuntu; then
     php_conf="/etc/php/${php_ver}/fpm/pool.d/www.conf"
     php_ini="/etc/php/${php_ver}/fpm/php.ini"
@@ -606,7 +611,7 @@ elif check_sys debian || check_sys ubuntu; then
     _error_detect "apt-get install -y libphp${php_ver}-embed php${php_ver}-bcmath php${php_ver}-gd php${php_ver}-imap php${php_ver}-mysql php${php_ver}-dba php${php_ver}-mongodb php${php_ver}-sybase"
     _error_detect "apt-get install -y php${php_ver}-pgsql php${php_ver}-odbc php${php_ver}-enchant php${php_ver}-gmp php${php_ver}-intl php${php_ver}-ldap php${php_ver}-snmp php${php_ver}-soap"
     _error_detect "apt-get install -y php${php_ver}-mbstring php${php_ver}-curl php${php_ver}-pspell php${php_ver}-xml php${php_ver}-zip php${php_ver}-bz2 php${php_ver}-lz4 php${php_ver}-zstd"
-    _error_detect "apt-get install -y php${php_ver}-tidy php${php_ver}-sqlite3 php${php_ver}-imagick php${php_ver}-grpc php${php_ver}-yaml php${php_ver}-uuid php${php_ver}-swoole"
+    _error_detect "apt-get install -y php${php_ver}-tidy php${php_ver}-sqlite3 php${php_ver}-imagick php${php_ver}-grpc php${php_ver}-yaml php${php_ver}-uuid"
     _error_detect "mkdir -m770 /var/lib/php/{session,wsdlcache,opcache}"
 fi
 _info "PHP installation completed"
