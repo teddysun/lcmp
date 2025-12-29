@@ -261,7 +261,7 @@ initialize_rhel() {
     _error_detect "dnf install -yq https://dl.lamp.sh/linux/rhel/el${rhel_ver}/x86_64/teddysun-release-1.0-1.el${rhel_ver}.noarch.rpm"
 
     _error_detect "dnf makecache"
-    _error_detect "dnf install -yq vim tar zip unzip net-tools bind-utils screen git virt-what wget whois firewalld mtr traceroute iftop htop jq tree"
+    _error_detect "dnf install -yq vim nano tar zip unzip net-tools screen git virt-what wget mtr traceroute iftop htop jq tree"
     _error_detect "dnf install -yq libnghttp2 libnghttp2-devel c-ares c-ares-devel curl libcurl libcurl-devel"
     # Handle SELinux
     if [ -s "/etc/selinux/config" ] && grep -q 'SELINUX=enforcing' /etc/selinux/config; then
@@ -285,20 +285,20 @@ initialize_rhel() {
         _error_detect "systemctl restart firewalld"
         _info "Firewall configured"
     else
-        _warn "firewalld is not running, skipping firewall configuration"
+        _warn "firewalld is not running, skipped firewall configuration"
     fi
 }
 
 initialize_deb() {
     _error_detect "apt-get update"
     _error_detect "apt-get -yq install lsb-release ca-certificates curl gnupg"
-    _error_detect "apt-get -yq install vim tar zip unzip net-tools bind9-utils screen git virt-what wget whois mtr traceroute iftop htop jq tree"
+    _error_detect "apt-get -yq install vim nano tar zip unzip net-tools screen git virt-what wget mtr traceroute iftop htop jq tree"
     if ufw status >/dev/null 2>&1; then
         _error_detect "ufw allow http"
         _error_detect "ufw allow https"
         _error_detect "ufw allow 443/udp"
     else
-        _warn "ufw is not running, skipping firewall configuration"
+        _warn "ufw is not running, skipped firewall configuration"
     fi
 }
 
@@ -327,10 +327,10 @@ EOF
             sysctl -p >/dev/null 2>&1
             _info "BBR configured"
         else
-            _info "BBR is already enabled, skipping configuration"
+            _info "BBR is already enabled, skipped configuration"
         fi
     else
-        _warn "Kernel version is below 4.9, skipping BBR configuration"
+        _warn "Kernel version is below 4.9, skipped BBR configuration"
     fi
 }
 
