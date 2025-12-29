@@ -212,7 +212,7 @@ ${domain} {
 		X-Frame-Options SAMEORIGIN
 	}
 	root * ${vhostdir}
-	encode gzip
+	encode gzip zstd
 	php_fastcgi ${php_sock}
 	file_server {
 		index index.html
