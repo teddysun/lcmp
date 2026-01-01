@@ -660,14 +660,14 @@ cat >"/etc/caddy/conf.d/default.conf" <<EOF
 		X-Frame-Options SAMEORIGIN
 	}
 	root * /data/www/default
-	encode gzip
+	encode gzip zstd
 	php_fastcgi ${php_sock}
 	file_server {
 		index index.html
 	}
 	log {
 		output file /var/log/caddy/access.log {
-			roll_size 100mb
+			roll_size 32mb
 			roll_keep 3
 			roll_keep_for 7d
 		}

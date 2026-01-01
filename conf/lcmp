@@ -14,7 +14,7 @@
 # Ubuntu 22.04
 # Ubuntu 24.04
 #
-# Copyright (C) 2023 - 2025 Teddysun <i@teddysun.com>
+# Copyright (C) 2023 - 2026 Teddysun <i@teddysun.com>
 #
 trap _exit INT QUIT TERM
 
@@ -219,7 +219,7 @@ ${domain} {
 	}
 	log {
 		output file /var/log/caddy/access_${domain}.log {
-			roll_size 100mb
+			roll_size 32mb
 			roll_keep 3
 			roll_keep_for 7d
 		}
