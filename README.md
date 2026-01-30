@@ -27,15 +27,9 @@ And all things will be done in a few minutes.
 
 ## Supported System
 
-- Enterprise Linux 8 (CentOS Stream 8, RHEL 8, Rocky Linux 8, AlmaLinux 8, Oracle Linux 8)
-- Enterprise Linux 9 (CentOS Stream 9, RHEL 9, Rocky Linux 9, AlmaLinux 9, Oracle Linux 9)
-- Enterprise Linux 10 (CentOS Stream 10, RHEL 10, Rocky Linux 10, AlmaLinux 10, Oracle Linux 10)
-- Debian 11
-- Debian 12
-- Debian 13
-- Ubuntu 20.04
-- Ubuntu 22.04
-- Ubuntu 24.04
+- Enterprise Linux 8/9/10 (CentOS Stream, RHEL, Rocky Linux, AlmaLinux, Oracle Linux)
+- Debian 11/12/13
+- Ubuntu 20.04/22.04/24.04
 
 ## System requirements
 
@@ -63,8 +57,8 @@ And all things will be done in a few minutes.
 dnf -y install wget git
 git clone https://github.com/teddysun/lcmp.git
 cd lcmp
-chmod 755 *.sh
-./lcmp.sh 2>&1 | tee lcmp.log
+chmod +x *.sh
+./lcmp.sh
 ```
 
 - If your server's OS: Debian 11 ~ 13 / Ubuntu 20.04 ~ 24.04
@@ -72,8 +66,8 @@ chmod 755 *.sh
 apt-get -y install wget git
 git clone https://github.com/teddysun/lcmp.git
 cd lcmp
-chmod 755 *.sh
-./lcmp.sh 2>&1 | tee lcmp.log
+chmod +x *.sh
+./lcmp.sh
 ```
 
 ## Upgrade
