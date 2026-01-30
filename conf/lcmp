@@ -4,18 +4,14 @@
 # LCMP (Linux + Caddy + MariaDB + PHP) environment
 #
 # Supported OS:
-# Enterprise Linux 8 (CentOS 8, RHEL 8, Rocky Linux 8, AlmaLinux 8, Oracle Linux 8)
-# Enterprise Linux 9 (CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9, Oracle Linux 9)
-# Enterprise Linux 10 (CentOS Stream 10, RHEL 10, Rocky Linux 10, AlmaLinux 10, Oracle Linux 10)
-# Debian 11
-# Debian 12
-# Debian 13
-# Ubuntu 20.04
-# Ubuntu 22.04
-# Ubuntu 24.04
+#   - Enterprise Linux 8/9/10 (CentOS Stream, RHEL, Rocky Linux, AlmaLinux, Oracle Linux)
+#   - Debian 11/12/13
+#   - Ubuntu 20.04/22.04/24.04
 #
 # Copyright (C) 2023 - 2026 Teddysun <i@teddysun.com>
-#
+set -euo pipefail
+shopt -s inherit_errexit 2>/dev/null || true
+
 trap _exit INT QUIT TERM
 
 _red() {
@@ -60,17 +56,9 @@ _exit() {
     exit 1
 }
 
+# Check if a command exists
 _exists() {
-    local cmd="$1"
-    if eval type type >/dev/null 2>&1; then
-        eval type "$cmd" >/dev/null 2>&1
-    elif command >/dev/null 2>&1; then
-        command -v "$cmd" >/dev/null 2>&1
-    else
-        which "$cmd" >/dev/null 2>&1
-    fi
-    local rt=$?
-    return ${rt}
+    command -v "$1" &>/dev/null
 }
 
 _error_detect() {
@@ -83,7 +71,7 @@ _error_detect() {
 
 _sleep_sec() {
     seconds=$1
-    while [ "${seconds}" -ge "0" ]; do
+    while [[ "${seconds}" -ge "0" ]]; do
       echo -ne "\r     \r"
       _green "${seconds}"
       seconds=$((seconds - 1))
@@ -92,29 +80,33 @@ _sleep_sec() {
     echo -ne "\r"
 }
 
-check_sys() {
-    local value="$1"
-    local release=''
-    if [ -f /etc/redhat-release ]; then
-        release="rhel"
-    elif grep -Eqi "debian" /etc/issue; then
-        release="debian"
-    elif grep -Eqi "ubuntu" /etc/issue; then
-        release="ubuntu"
-    elif grep -Eqi "centos|red hat|redhat" /etc/issue; then
-        release="rhel"
-    elif grep -Eqi "debian" /proc/version; then
-        release="debian"
-    elif grep -Eqi "ubuntu" /proc/version; then
-        release="ubuntu"
-    elif grep -Eqi "centos|red hat|redhat" /proc/version; then
-        release="rhel"
+# Get OS ID from /etc/os-release
+_get_os_id() {
+    if [[ -f /etc/os-release ]]; then
+        awk -F= '/^ID=/{gsub(/"/, ""); print $2}' /etc/os-release
     fi
-    if [ "${value}" == "${release}" ]; then
-        return 0
-    else
-        return 1
-    fi
+}
+
+# Check OS type
+_check_sys() {
+    local os_type="$1"
+    local os_id
+    os_id=$(_get_os_id)
+    case "${os_type}" in
+        rhel)
+            [[ "${os_id}" =~ ^(centos|rhel|rocky|almalinux|ol|fedora)$ ]] || \
+            [[ -f /etc/redhat-release ]]
+            ;;
+        debian)
+            [[ "${os_id}" == "debian" ]]
+            ;;
+        ubuntu)
+            [[ "${os_id}" == "ubuntu" ]]
+            ;;
+        *)
+            return 1
+            ;;
+    esac
 }
 
 vhost() {
@@ -158,8 +150,8 @@ database() {
 add_vhost() {
     while true; do
         read -r -p "[$(date)] Please input a domain (example: www.lamp.sh): " domain
-        if [ -n "${domain}" ] && [[ "${domain}" = "${domain%[[:space:]]*}" ]]; then
-            if [ -f "/etc/caddy/conf.d/${domain}.conf" ]; then
+        if [[ -n "${domain}" ]] && [[ "${domain}" == "${domain%[[:space:]]*}" ]]; then
+            if [[ -f "/etc/caddy/conf.d/${domain}.conf" ]]; then
                 _error "Domain name ${domain} is exist, please check it and try again."
             else
                 _info "Domain name: $(_green "${domain}")"
@@ -171,13 +163,13 @@ add_vhost() {
     done
 
     read -r -p "[$(date)] Please input a directory for domain ${domain} (default directory: /data/www/${domain}): " vhostdir
-    if [ -z "${vhostdir}" ]; then
+    if [[ -z "${vhostdir}" ]]; then
         vhostdir="/data/www/${domain}"
     fi
     _info "Virtual Host directory: $(_green "${vhostdir}")"
 
     read -r -p "[$(date)] Create a MariaDB database and a user with same name (y/n): " create_database
-    if [ "${create_database}" == "y" ] || [ "${create_database}" == "Y" ]; then
+    if [[ "${create_database}" == "y" ]] || [[ "${create_database}" == "Y" ]]; then
         verify_db_password
         add_database_menu
     fi
@@ -187,7 +179,7 @@ add_vhost() {
     _error_detect "chmod -R 755 ${vhostdir}"
     _error_detect "chown -R caddy:caddy ${vhostdir}"
     add_vhost_config
-    if [ "${create_database}" == "y" ] || [ "${create_database}" == "Y" ]; then
+    if [[ "${create_database}" == "y" ]] || [[ "${create_database}" == "Y" ]]; then
         add_database
     fi
     _error_detect "systemctl restart caddy"
@@ -196,7 +188,7 @@ add_vhost() {
     _info "Virtual Host directory: $(_green "${vhostdir}")"
     _info "Virtual Host config: $(_green "/etc/caddy/conf.d/${domain}.conf")"
     list_vhost
-    if [ "${create_database}" == "y" ] || [ "${create_database}" == "Y" ]; then
+    if [[ "${create_database}" == "y" ]] || [[ "${create_database}" == "Y" ]]; then
         _info "Database username: ${database_name}"
         _info "Database userpassword: ${mysql_password}"
         _info "Database name: ${database_name}"
@@ -232,7 +224,7 @@ list_vhost() {
     _info "Caddy Virtual Host list:"
     local vhosts=()
     while IFS=' ' read -r line; do vhosts+=("${line}"); done < <(find /etc/caddy/conf.d/ -name "*.conf" -type f -printf "%f\n" | sed 's/.conf//g' | grep -v "default")
-    if [ "${#vhosts[@]}" -gt 0 ]; then
+    if [[ "${#vhosts[@]}" -gt 0 ]]; then
         for i in "${vhosts[@]}"; do
             _info "  $(_green "${i}")"
         done
@@ -245,13 +237,13 @@ del_vhost() {
     list_vhost
     while true; do
         read -r -p "[$(date)] Please enter domain you want to delete: " domain
-        if [ -z "${domain}" ]; then
+        if [[ -z "${domain}" ]]; then
             _red "Domain name can not be empty.\n"
         else
             break
         fi
     done
-    if [ -f "/etc/caddy/conf.d/${domain}.conf" ]; then
+    if [[ -f "/etc/caddy/conf.d/${domain}.conf" ]]; then
         rm -f "/etc/caddy/conf.d/${domain}.conf"
         _info "Domain $(_red "${domain}") has been deleted."
         _info "Website files will not be delete for security reasons."
@@ -272,10 +264,10 @@ EOF
 }
 
 clean_temp_mycnf() {
-    if [ -s /tmp/.my.cnf ]; then
+    if [[ -s "/tmp/.my.cnf" ]]; then
         rm -f /tmp/.my.cnf
     fi
-    if [ -s /tmp/.mysql.tmp ]; then
+    if [[ -s "/tmp/.mysql.tmp" ]]; then
         rm -f /tmp/.mysql.tmp
     fi
 }
@@ -289,7 +281,7 @@ do_query() {
 
 verify_db_password() {
     status=1
-    while [ ${status} -eq 1 ]; do
+    while [[ ${status} -eq 1 ]]; do
         read -s -r -p "[$(date)] Please input current root password of Database (password will not shown): " db_root_password
         echo
         if ! /usr/bin/mariadb -uroot -p"${db_root_password}" -e "exit" >/dev/null 2>&1; then
@@ -304,7 +296,7 @@ verify_db_password() {
 enter_database_name() {
     while true; do
         read -r -p "[$(date)] Please input database name: " database_name
-        if [ -z "${database_name}" ]; then
+        if [[ -z "${database_name}" ]]; then
             _red "Database name can not be empty!\n"
         else
             break
@@ -316,7 +308,7 @@ add_database_menu() {
     enter_database_name
     _info "Your will create a MariaDB database and a user with same name: $(_green "${database_name}")"
     read -s -r -p "[$(date)] Please input password for MariaDB user ${database_name} (password will not shown): " mysql_password
-    if [ -z "${mysql_password}" ]; then
+    if [[ -z "${mysql_password}" ]]; then
         mysql_password="${database_name}"
     fi
     echo
@@ -376,7 +368,7 @@ EOF
 edit_database() {
     while true; do
         read -r -p "[$(date)] Please input database username: " database_username
-        if [ -z "${database_username}" ]; then
+        if [[ -z "${database_username}" ]]; then
             _red "Database username can not be empty!\n"
         else
             break
@@ -384,7 +376,7 @@ edit_database() {
     done
     while true; do
         read -s -r -p "[$(date)] Please input NEW password (password will not shown): " database_username_passwd
-        if [ -z "${database_username_passwd}" ]; then
+        if [[ -z "${database_username_passwd}" ]]; then
             _red "NEW password can not be empty!\n"
         else
             break
@@ -395,7 +387,7 @@ edit_database() {
     RT1=$?
     do_query "SET PASSWORD FOR '${database_username}'@'localhost' = PASSWORD('${database_username_passwd}');"
     RT2=$?
-    if [ $((RT1 + RT2)) -eq 0 ]; then
+    if [[ $((RT1 + RT2)) -eq 0 ]]; then
         _info "Edit user $(_green "${database_username}")'s password sucessfully."
     else
         _info "Edit user $(_red "${database_username}")'s password failed."
@@ -442,70 +434,78 @@ lcmp_version() {
 }
 
 check_env() {
-    if check_sys rhel; then
+    if _check_sys rhel; then
         php_sock="unix//run/php-fpm/www.sock"
         php_fpm="php-fpm"
-    elif check_sys debian || check_sys ubuntu; then
+    elif _check_sys debian || _check_sys ubuntu; then
         php_sock="unix//run/php/php-fpm.sock"
         php_ver="$(/usr/bin/php -v | head -n1 | awk '{print $2}' | cut -d. -f1-2)"
         php_fpm="php${php_ver}-fpm"
     else
-        _error "Unsupported OS. Please switch to Enterprise Linux 8+, Debian 11+, or Ubuntu 20.04+ and try again."
+        _error "Unsupported OS. Please use Enterprise Linux 8+, Debian 11+, or Ubuntu 20.04+"
     fi
 }
 
-# Check user
-[ ${EUID} -ne 0 ] && _red "This script must be run as root!\n" && exit 1
+main() {
+    # Check root
+    if [[ ${EUID} -ne 0 ]]; then
+        _red "This script must be run as root!\n"
+        exit 1
+    fi
+    arg1="${1:-}"
+    arg2="${2:-}"
 
-arg1=$1
-arg2=$2
+    _info "+-------------------------------------------+"
+    _info "|    Manager for LCMP, Written by Teddysun  |"
+    _info "+-------------------------------------------+"
+    _info "|    $(_green "https://github.com/teddysun/lcmp")       |"
+    _info "+-------------------------------------------+"
 
-_info "+-------------------------------------------+"
-_info "|    Manager for LCMP, Written by Teddysun  |"
-_info "+-------------------------------------------+"
-_info "|    $(_green "https://github.com/teddysun/lcmp")       |"
-_info "+-------------------------------------------+"
+    check_env
 
-check_env
-case "${arg1}" in
-    start)
-        lcmp_start
-        ;;
-    stop)
-        lcmp_stop
-        ;;
-    restart)
-        lcmp_stop
-        sleep 1
-        lcmp_start
-        ;;
-    status)
-        lcmp_status
-        ;;
-    version)
-        lcmp_version
-        ;;
-    vhost)
-        vhost "${arg2}"
-        ;;
-    db)
-        verify_db_password
-        database "${arg2}"
-        clean_temp_mycnf
-        ;;
-    *)
-        _info "Usage:"
-        _info "  $(_green "lcmp start")      Start all of LCMP services"
-        _info "  $(_green "lcmp stop")       Stop all of LCMP services"
-        _info "  $(_green "lcmp restart")    Restart all of LCMP services"
-        _info "  $(_green "lcmp status")     Check all of LCMP services status"
-        _info "  $(_green "lcmp version")    Print all of LCMP software version"
-        _info "  $(_green "lcmp vhost add")  Create a new Caddy Virtual Host"
-        _info "  $(_green "lcmp vhost list") List all of Caddy Virtual Hosts"
-        _info "  $(_green "lcmp vhost del")  Delete a Caddy Virtual Host"
-        _info "  $(_green "lcmp db add")     Create a MariaDB database and a user with same name"
-        _info "  $(_green "lcmp db list")    List all of MariaDB databases"
-        _info "  $(_green "lcmp db del")     Delete a MariaDB database and a user with same name"
-        _info "  $(_green "lcmp db edit")    Update a MariaDB database username's password"
-        ;;
-esac
+    case "${arg1}" in
+        start)
+            lcmp_start
+            ;;
+        stop)
+            lcmp_stop
+            ;;
+        restart)
+            lcmp_stop
+            sleep 1
+            lcmp_start
+            ;;
+        status)
+            lcmp_status
+            ;;
+        version)
+            lcmp_version
+            ;;
+        vhost)
+            vhost "${arg2}"
+            ;;
+        db)
+            verify_db_password
+            database "${arg2}"
+            clean_temp_mycnf
+            ;;
+        *)
+            _info "Usage:"
+            _info "  $(_green "lcmp start")      Start all of LCMP services"
+            _info "  $(_green "lcmp stop")       Stop all of LCMP services"
+            _info "  $(_green "lcmp restart")    Restart all of LCMP services"
+            _info "  $(_green "lcmp status")     Check all of LCMP services status"
+            _info "  $(_green "lcmp version")    Print all of LCMP software version"
+            _info "  $(_green "lcmp vhost add")  Create a new Caddy Virtual Host"
+            _info "  $(_green "lcmp vhost list") List all of Caddy Virtual Hosts"
+            _info "  $(_green "lcmp vhost del")  Delete a Caddy Virtual Host"
+            _info "  $(_green "lcmp db add")     Create a MariaDB database and a user with same name"
+            _info "  $(_green "lcmp db list")    List all of MariaDB databases"
+            _info "  $(_green "lcmp db del")     Delete a MariaDB database and a user with same name"
+            _info "  $(_green "lcmp db edit")    Update a MariaDB database username's password"
+            ;;
+    esac
+}
+
+# Run main function
+main "$@"
