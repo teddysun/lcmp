@@ -16,23 +16,23 @@
 
 ## 📋 Table of Contents
 
-- [Description](#-description)
-- [Supported System](#-supported-system)
-- [System Requirements](#-system-requirements)
-- [Supported Software](#-supported-software)
-- [Supported Architecture](#-supported-architecture)
-- [Installation](#-installation)
-- [Upgrade](#-upgrade)
-- [Uninstall](#-uninstall)
-- [Default Location](#-default-location)
-- [Process Management](#-process-management)
-- [lcmp Command](#-lcmp-command)
-- [Bugs & Issues](#-bugs--issues)
-- [License](#-license)
+- [Description](#description)
+- [Supported System](#supported-system)
+- [System Requirements](#system-requirements)
+- [Supported Software](#supported-software)
+- [Supported Architecture](#supported-architecture)
+- [Installation](#installation)
+- [Upgrade](#upgrade)
+- [Uninstall](#uninstall)
+- [Default Location](#default-location)
+- [Process Management](#process-management)
+- [lcmp Command](#lcmp-command)
+- [Bugs & Issues](#bugs--issues)
+- [License](#license)
 
 ---
 
-## 📝 Description
+## Description
 
 **LCMP** (Linux + Caddy + MariaDB + PHP) is a powerful bash script for the installation of **Caddy2** + **MariaDB** + **PHP** stack.
 
@@ -44,7 +44,7 @@
 
 ---
 
-## 💻 Supported System
+## Supported System
 
 | Distribution | Versions |
 |-------------|----------|
@@ -54,7 +54,7 @@
 
 ---
 
-## ⚙️ System Requirements
+## System Requirements
 
 | Requirement | Minimum |
 |-------------|---------|
@@ -66,7 +66,7 @@
 
 ---
 
-## 🛠️ Supported Software
+## Supported Software
 
 | Software | Versions | Package Source |
 |----------|----------|----------------|
@@ -76,14 +76,14 @@
 
 ---
 
-## 🏗️ Supported Architecture
+## Supported Architecture
 
 - `x86_64` (amd64)
 - `aarch64` (arm64)
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ### Enterprise Linux 8 / 9 / 10
 
