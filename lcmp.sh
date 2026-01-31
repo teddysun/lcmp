@@ -15,7 +15,8 @@ shopt -s inherit_errexit 2>/dev/null || true
 #==============================================================================
 # Configuration & Constants
 #==============================================================================
-readonly SCRIPT_DIR="$(cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+SCRIPT_DIR="$(cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+readonly SCRIPT_DIR
 readonly DEFAULT_DB_PASS="Teddysun.com"
 readonly LOG_FILE="/var/log/lcmp-install.log"
 
@@ -32,8 +33,9 @@ _yellow() { printf '\033[1;33m%b\033[0m' "$1"; }
 _log() {
     local level="$1"
     shift 1
-    local message="$@"
-    local timestamp=$(date)
+    local message="$*"
+    local timestamp
+    timestamp=$(date)
     echo "[${timestamp}] [${level}] ${message}" | tee -a "${LOG_FILE}" || echo "[${timestamp}] [${level}] ${message}"
 }
 
@@ -691,6 +693,7 @@ install_mariadb() {
         fi
         _error_detect "apt-get update"
         _error_detect "DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-common mariadb-server mariadb-client mariadb-backup"
+        # shellcheck disable=SC2034
         cnf_path_ref="/etc/mysql/mariadb.conf.d/50-server.cnf"
     fi
 
@@ -718,7 +721,9 @@ install_php() {
     elif _check_sys debian || _check_sys ubuntu; then
         php_conf_ref="/etc/php/${php_ver}/fpm/pool.d/www.conf"
         php_ini_ref="/etc/php/${php_ver}/fpm/php.ini"
+        # shellcheck disable=SC2034
         php_fpm_ref="php${php_ver}-fpm"
+        # shellcheck disable=SC2034
         php_sock_ref="unix//run/php/php-fpm.sock"
         sock_location_ref="/run/mysqld/mysqld.sock"
         configure_php_deb "${php_ver}"
