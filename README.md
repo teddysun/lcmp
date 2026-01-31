@@ -36,7 +36,7 @@
 
 **LCMP** (Linux + Caddy + MariaDB + PHP) is a powerful bash script for the installation of **Caddy2** + **MariaDB** + **PHP** stack.
 
-✨ **Key Features:**
+**Key Features:**
 - One-command installation - just input numbers to select components
 - Optimized for small memory VPS (512 MiB+ RAM)
 - Supports both `dnf` (RHEL-based) and `apt-get` (Debian-based) package managers
@@ -107,7 +107,7 @@ chmod +x *.sh
 
 ---
 
-## ⬆️ Upgrade
+## Upgrade
 
 ### Enterprise Linux 8 / 9 / 10
 
@@ -141,7 +141,7 @@ apt-get install --only-upgrade -y php${php_ver}-*
 
 ---
 
-## 🗑️ Uninstall
+## Uninstall
 
 ### Enterprise Linux 8 / 9 / 10
 
@@ -164,7 +164,7 @@ apt-get remove -y php${php_ver}-*
 
 ---
 
-## 📁 Default Location
+## Default Location
 
 ### Caddy
 
@@ -193,7 +193,7 @@ apt-get remove -y php${php_ver}-*
 
 ---
 
-## 🔧 Process Management
+## Process Management
 
 | Service | Command |
 |---------|---------|
@@ -204,7 +204,7 @@ apt-get remove -y php${php_ver}-*
 
 ---
 
-## ⌨️ lcmp Command
+## lcmp Command
 
 | Command | Description |
 |---------|-------------|
@@ -223,16 +223,16 @@ apt-get remove -y php${php_ver}-*
 
 ---
 
-## 🐛 Bugs & Issues
+## Bugs & Issues
 
 Please feel free to report any bugs or issues:
 
-- 📧 Email: [i@teddysun.com](mailto:i@teddysun.com)
-- 🐙 GitHub: [Open an Issue](https://github.com/teddysun/lcmp/issues)
+- Email: [i@teddysun.com](mailto:i@teddysun.com)
+- GitHub: [Open an Issue](https://github.com/teddysun/lcmp/issues)
 
 ---
 
-## 📄 License
+## License
 
 Copyright (C) 2023 - 2026 [Teddysun](https://teddysun.com/)
 
