@@ -16,19 +16,19 @@
 
 ## 📋 Table of Contents
 
-- [Description](#description)
-- [Supported System](#supported-system)
-- [System Requirements](#system-requirements)
-- [Supported Software](#supported-software)
-- [Supported Architecture](#supported-architecture)
-- [Installation](#installation)
-- [Upgrade](#upgrade)
-- [Uninstall](#uninstall)
-- [Default Location](#default-location)
-- [Process Management](#process-management)
-- [lcmp Command](#lcmp-command)
-- [Bugs & Issues](#bugs--issues)
-- [License](#license)
+- [Description](#-description)
+- [Supported System](#-supported-system)
+- [System Requirements](#-system-requirements)
+- [Supported Software](#-supported-software)
+- [Supported Architecture](#-supported-architecture)
+- [Installation](#-installation)
+- [Upgrade](#-upgrade)
+- [Uninstall](#-uninstall)
+- [Default Location](#-default-location)
+- [Process Management](#-process-management)
+- [lcmp Command](#-lcmp-command)
+- [Bugs & Issues](#-bugs--issues)
+- [License](#-license)
 
 ---
 
