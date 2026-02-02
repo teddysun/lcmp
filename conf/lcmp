@@ -150,22 +150,60 @@ database() {
 add_vhost() {
     while true; do
         read -r -p "[$(date)] Please input a domain (example: www.lamp.sh): " domain
-        if [[ -n "${domain}" ]] && [[ "${domain}" == "${domain%[[:space:]]*}" ]]; then
-            if [[ -f "/etc/caddy/conf.d/${domain}.conf" ]]; then
-                _error "Domain name ${domain} is exist, please check it and try again."
-            else
-                _info "Domain name: $(_green "${domain}")"
-            fi
-            break
+        if [[ -z "${domain}" ]]; then
+            _red "Domain name can not be empty.\n"
+            continue
+        fi
+        if [[ "${domain}" =~ [[:space:]] ]]; then
+            _red "Domain name can not contain space.\n"
+            continue
+        fi
+        if [[ ! "${domain}" =~ ^[a-zA-Z0-9][-a-zA-Z0-9.]*[a-zA-Z0-9]$ ]]; then
+            _red "Domain name is invalid. Only letters, numbers, hyphen and dot are allowed.\n"
+            continue
+        fi
+        if [[ -f "/etc/caddy/conf.d/${domain}.conf" ]]; then
+            _red "Domain name ${domain} is exist, please check it and try again.\n"
+            continue
         else
-            _red "Domain name can not be empty or contain space.\n"
+            _info "Domain name: $(_green "${domain}")"
+            break
         fi
     done
 
-    read -r -p "[$(date)] Please input a directory for domain ${domain} (default directory: /data/www/${domain}): " vhostdir
-    if [[ -z "${vhostdir}" ]]; then
-        vhostdir="/data/www/${domain}"
+    # Check if domain is a root domain (format: domain.tld, only one dot)
+    redirect_www="n"
+    if [[ "${domain}" != *.*.* ]] && [[ "${domain}" == *.* ]]; then
+        www_domain="www.${domain}"
+        if [[ ! -f "/etc/caddy/conf.d/${www_domain}.conf" ]]; then
+            read -r -p "[$(date)] Redirect $(_green "${domain}") to $(_green "${www_domain}") (y/n, default: n): " redirect_www
+            if [[ "${redirect_www}" == "y" ]] || [[ "${redirect_www}" == "Y" ]]; then
+                redirect_www="y"
+                _info "Will redirect $(_green "${domain}") to $(_green "${www_domain}")"
+            fi
+        fi
     fi
+
+    while true; do
+        read -r -p "[$(date)] Please input a directory for domain ${domain} (default directory: /data/www/${domain}): " vhostdir
+        if [[ -z "${vhostdir}" ]]; then
+            vhostdir="/data/www/${domain}"
+            break
+        fi
+        if [[ "${vhostdir}" != "/"* ]]; then
+            _red "Directory must be an absolute path (start with /).\n"
+            continue
+        fi
+        if [[ "${vhostdir}" =~ [[:space:]] ]]; then
+            _red "Directory can not contain whitespace characters.\n"
+            continue
+        fi
+        if [[ "${vhostdir}" == *[:\;*?\"\<\>\|]* ]]; then
+            _red "Directory contains invalid characters.\n"
+            continue
+        fi
+        break
+    done
     _info "Virtual Host directory: $(_green "${vhostdir}")"
 
     read -r -p "[$(date)] Create a MariaDB database and a user with same name (y/n): " create_database
@@ -185,6 +223,9 @@ add_vhost() {
     _error_detect "systemctl restart caddy"
     _info "Virtual Host infomation:"
     _info "Domain name: $(_green "${domain}")"
+    if [[ "${redirect_www}" == "y" ]]; then
+        _info "Redirect: $(_green "${domain}") -> $(_green "${www_domain}")"
+    fi
     _info "Virtual Host directory: $(_green "${vhostdir}")"
     _info "Virtual Host config: $(_green "/etc/caddy/conf.d/${domain}.conf")"
     list_vhost
@@ -196,7 +237,33 @@ add_vhost() {
 }
 
 add_vhost_config() {
-    cat >"/etc/caddy/conf.d/${domain}.conf" <<EOF
+    if [[ "${redirect_www}" == "y" ]]; then
+        cat >"/etc/caddy/conf.d/${domain}.conf" <<EOF
+${domain}, ${www_domain} {
+	header {
+		Strict-Transport-Security "max-age=31536000; preload"
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+	}
+	@www host ${domain}
+	redir @www https://${www_domain}{uri} permanent
+	root * ${vhostdir}
+	encode gzip zstd
+	php_fastcgi ${php_sock}
+	file_server {
+		index index.html
+	}
+	log {
+		output file /var/log/caddy/access_${domain}.log {
+			roll_size 32mb
+			roll_keep 3
+			roll_keep_for 7d
+		}
+	}
+}
+EOF
+    else
+        cat >"/etc/caddy/conf.d/${domain}.conf" <<EOF
 ${domain} {
 	header {
 		Strict-Transport-Security "max-age=31536000; preload"
@@ -218,6 +285,7 @@ ${domain} {
 	}
 }
 EOF
+    fi
 }
 
 list_vhost() {
