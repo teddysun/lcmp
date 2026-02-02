@@ -302,23 +302,38 @@ list_vhost() {
 }
 
 del_vhost() {
+    local vhostdir
     list_vhost
     while true; do
-        read -r -p "[$(date)] Please enter domain you want to delete: " domain
+        read -r -p "[$(date)] Please enter a domain you want to delete: " domain
         if [[ -z "${domain}" ]]; then
             _red "Domain name can not be empty.\n"
-        else
-            break
+            continue
         fi
+        if [[ "${domain}" =~ [[:space:]] ]]; then
+            _red "Domain name can not contain space.\n"
+            continue
+        fi
+        if [[ ! "${domain}" =~ ^[a-zA-Z0-9][-a-zA-Z0-9.]*[a-zA-Z0-9]$ ]]; then
+            _red "Domain name is invalid. Only letters, numbers, hyphen and dot are allowed.\n"
+            continue
+        fi
+        _info "Domain name: $(_green "${domain}")"
+        break
     done
     if [[ -f "/etc/caddy/conf.d/${domain}.conf" ]]; then
-        rm -f "/etc/caddy/conf.d/${domain}.conf"
+        vhostdir=$(grep "root *" "/etc/caddy/conf.d/${domain}.conf" | awk '{print $3}')
+        _error_detect "rm -f /etc/caddy/conf.d/${domain}.conf"
         _info "Domain $(_red "${domain}") has been deleted."
-        _info "Website files will not be delete for security reasons."
+        if [[ -n "${vhostdir}" ]]; then
+            _info "Website directory $(_red "${vhostdir}") will not be delete for security reason."
+        else
+            _info "Website directory will not be delete for security reason."
+        fi
         _info "You need to manually delete the website files."
         systemctl restart caddy >/dev/null 2>&1
     else
-        _error "Domain: ${domain} was not exist."
+        _error "Domain: ${domain} is not exist."
     fi
 }
 
