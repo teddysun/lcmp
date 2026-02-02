@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# This is a Shell script for Manager
+# This is a shell script for managing
 # LCMP (Linux + Caddy + MariaDB + PHP) environment
 #
 # Supported OS:
@@ -65,7 +65,7 @@ _error_detect() {
     local cmd="$1"
     _info "${cmd}"
     if ! eval "${cmd}" 1>/dev/null; then
-        _error "Execution command (${cmd}) failed, please check it and try again."
+        _error "Executing command (${cmd}) failed, please check it and try again."
     fi
 }
 
@@ -163,7 +163,7 @@ add_vhost() {
             continue
         fi
         if [[ -f "/etc/caddy/conf.d/${domain}.conf" ]]; then
-            _red "Domain name ${domain} is exist, please check it and try again.\n"
+            _red "Domain name ${domain} already exists, please check it and try again.\n"
             continue
         else
             _info "Domain name: $(_green "${domain}")"
@@ -221,7 +221,7 @@ add_vhost() {
         add_database
     fi
     _error_detect "systemctl restart caddy"
-    _info "Virtual Host infomation:"
+    _info "Virtual Host information:"
     _info "Domain name: $(_green "${domain}")"
     if [[ "${redirect_www}" == "y" ]]; then
         _info "Redirect: $(_green "${domain}") -> $(_green "${www_domain}")"
@@ -326,14 +326,14 @@ del_vhost() {
         _error_detect "rm -f /etc/caddy/conf.d/${domain}.conf"
         _info "Domain $(_red "${domain}") has been deleted."
         if [[ -n "${vhostdir}" ]]; then
-            _info "Website directory $(_red "${vhostdir}") will not be delete for security reason."
+            _info "Website directory $(_red "${vhostdir}") will not be deleted for security reasons."
         else
-            _info "Website directory will not be delete for security reason."
+            _info "Website directory will not be deleted for security reasons."
         fi
         _info "You need to manually delete the website files."
         systemctl restart caddy >/dev/null 2>&1
     else
-        _error "Domain: ${domain} is not exist."
+        _error "Domain: ${domain} does not exist."
     fi
 }
 
@@ -389,7 +389,7 @@ enter_database_name() {
 
 add_database_menu() {
     enter_database_name
-    _info "Your will create a MariaDB database and a user with same name: $(_green "${database_name}")"
+    _info "You will create a MariaDB database and a user with same name: $(_green "${database_name}")"
     read -s -r -p "[$(date)] Please input password for MariaDB user ${database_name} (password will not shown): " mysql_password
     if [[ -z "${mysql_password}" ]]; then
         mysql_password="${database_name}"
@@ -410,7 +410,7 @@ GRANT ALL PRIVILEGES ON \`${database_name}\`.* TO '${database_name}'@'127.0.0.1'
 FLUSH PRIVILEGES;
 EOF
     if /usr/bin/mariadb --defaults-file=/tmp/.my.cnf </tmp/.add_mysql.sql >/dev/null 2>&1; then
-        _info "Add database $(_green "${database_name}") sucessfully."
+        _info "Add database $(_green "${database_name}") successfully."
     else
         _info "Add database $(_red "${database_name}") failed."
     fi
@@ -419,7 +419,7 @@ EOF
 
 list_database() {
     if /usr/bin/mariadb --defaults-file=/tmp/.my.cnf -e "SHOW DATABASES;"; then
-        _info "List all databases sucessfully."
+        _info "List all databases successfully."
     else
         _info "List all databases failed."
     fi
@@ -441,7 +441,7 @@ DROP DATABASE IF EXISTS \`${database_name}\`;
 FLUSH PRIVILEGES;
 EOF
     if /usr/bin/mariadb --defaults-file=/tmp/.my.cnf </tmp/.del.mysql.sql; then
-        _info "Delete database $(_green "${database_name}") sucessfully."
+        _info "Delete database $(_green "${database_name}") successfully."
     else
         _info "Delete database $(_red "${database_name}") failed."
     fi
@@ -471,7 +471,7 @@ edit_database() {
     do_query "SET PASSWORD FOR '${database_username}'@'localhost' = PASSWORD('${database_username_passwd}');"
     RT2=$?
     if [[ $((RT1 + RT2)) -eq 0 ]]; then
-        _info "Edit user $(_green "${database_username}")'s password sucessfully."
+        _info "Edit user $(_green "${database_username}")'s password successfully."
     else
         _info "Edit user $(_red "${database_username}")'s password failed."
     fi
@@ -487,7 +487,7 @@ lcmp_start() {
 }
 
 lcmp_stop() {
-    _info "Stoping LCMP..."
+    _info "Stopping LCMP..."
     _error_detect "systemctl stop caddy"
     _error_detect "systemctl stop mariadb"
     _error_detect "systemctl stop ${php_fpm}"
@@ -574,10 +574,10 @@ main() {
             ;;
         *)
             _info "Usage:"
-            _info "  $(_green "lcmp start")      Start all of LCMP services"
-            _info "  $(_green "lcmp stop")       Stop all of LCMP services"
-            _info "  $(_green "lcmp restart")    Restart all of LCMP services"
-            _info "  $(_green "lcmp status")     Check all of LCMP services status"
+            _info "  $(_green "lcmp start")      Start all LCMP services"
+            _info "  $(_green "lcmp stop")       Stop all LCMP services"
+            _info "  $(_green "lcmp restart")    Restart all LCMP services"
+            _info "  $(_green "lcmp status")     Check all LCMP services status"
             _info "  $(_green "lcmp version")    Print all of LCMP software version"
             _info "  $(_green "lcmp vhost add")  Create a new Caddy Virtual Host"
             _info "  $(_green "lcmp vhost list") List all of Caddy Virtual Hosts"
