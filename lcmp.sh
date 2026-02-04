@@ -658,6 +658,10 @@ install_caddy() {
     elif _check_sys debian || _check_sys ubuntu; then
         _error_detect "curl -fsSL https://dl.lamp.sh/shadowsocks/DEB-GPG-KEY-Teddysun | gpg --dearmor --yes -o /usr/share/keyrings/deb-gpg-key-teddysun.gpg"
         _error_detect "chmod a+r /usr/share/keyrings/deb-gpg-key-teddysun.gpg"
+        if [[ ! -d "/etc/apt/sources.list.d" ]]; then
+            _info "Directory /etc/apt/sources.list.d does not exist, let's create it"
+            _error_detect "mkdir -p /etc/apt/sources.list.d"
+        fi
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/deb-gpg-key-teddysun.gpg] https://dl.lamp.sh/shadowsocks/$(lsb_release -si | tr '[:upper:]' '[:lower:]')/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/teddysun.list
         _error_detect "apt-get update"
         _error_detect "apt-get install -y caddy"
