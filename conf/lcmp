@@ -507,13 +507,13 @@ lcmp_status() {
 
 lcmp_version() {
     _info "$(_green "Caddy") version:"
-    /usr/bin/caddy version
+    [[ -x "/usr/bin/caddy" ]] && /usr/bin/caddy version || true
     echo
     _info "$(_green "MariaDB") version:"
-    /usr/bin/mariadb --version
+    [[ -x "/usr/bin/mariadb" ]] && /usr/bin/mariadb --version || true
     echo
     _info "$(_green "PHP") version:"
-    /usr/bin/php -v
+    [[ -x "/usr/bin/php" ]] && /usr/bin/php -v || true
 }
 
 check_env() {

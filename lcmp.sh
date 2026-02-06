@@ -11,6 +11,7 @@
 
 set -euo pipefail
 shopt -s inherit_errexit 2>/dev/null || true
+trap _exit_handler INT QUIT TERM
 
 #==============================================================================
 # Configuration & Constants
@@ -52,7 +53,6 @@ _exit_handler() {
     printf "\n"
     exit 1
 }
-trap _exit_handler INT QUIT TERM
 
 #==============================================================================
 # Utility Functions
@@ -636,6 +636,32 @@ EOF
     _info "Caddy default configuration file created"
 }
 
+configure_caddy_static_conf() {
+    # Create site default configuration file (static only, no PHP)
+    cat > "/etc/caddy/conf.d/default.conf" << EOF
+:80 {
+    header {
+        Strict-Transport-Security "max-age=31536000; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options SAMEORIGIN
+    }
+    root * /data/www/default
+    encode gzip zstd
+    file_server {
+        index index.html
+    }
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 32mb
+            roll_keep 3
+            roll_keep_for 7d
+        }
+    }
+}
+EOF
+    _info "Caddy static configuration file created"
+}
+
 install_phpmyadmin() {
     local db_pass="$1"
 
@@ -740,7 +766,27 @@ install_php() {
     configure_php_settings "${php_conf_ref}" "${php_ini_ref}" "${sock_location_ref}" "${is_rhel}"
 }
 
+ask_install_component() {
+    local component="$1"
+    local -n var_name="$2"
+    local choice
+
+    read -r -p "[$(date)] [INFO] Do you want to install ${component}? [Y/n] (Default: yes): " choice
+    choice="${choice:-Y}"
+    case "${choice}" in
+        [Yy]|[Yy][Ee][Ss])
+            var_name="yes" ;;
+        [Nn]|[Nn][Oo])
+            var_name="no" ;;
+        *)
+            _warn "Invalid input. Using default (Yes)"
+            # shellcheck disable=SC2034
+            var_name="yes" ;;
+    esac
+}
+
 main() {
+
     # Check root
     if [[ ${EUID} -ne 0 ]]; then
         _red "This script must be run as root!\n"
@@ -780,15 +826,45 @@ main() {
 
     [[ "${supported}" != "true" ]] && _error "Unsupported OS. Please use Enterprise Linux 8+, Debian 11+, or Ubuntu 20.04+"
 
-    # Get user input
-    select_mariadb_version
-    read_db_password
-    select_php_version
+    # Component selection flags (default: yes)
+    local install_caddy_flag="yes"
+    local install_mariadb_flag="yes"
+    local install_php_flag="yes"
+
+    # Get user input for component selection
+    _info "---------------------------"
+    _info "Component Selection"
+    _info "---------------------------"
+    ask_install_component "Caddy" "install_caddy_flag"
+    ask_install_component "MariaDB" "install_mariadb_flag"
+    ask_install_component "PHP" "install_php_flag"
+
+    # Check if at least one component is selected
+    if [[ "${install_caddy_flag}" == "no" && "${install_mariadb_flag}" == "no" && "${install_php_flag}" == "no" ]]; then
+        _error "At least one component must be selected for installation"
+    fi
 
     _info "---------------------------"
-    _info "MariaDB version: $(_green "${mariadb_ver}")"
-    _info "PHP version: $(_green "${php_ver}")"
+    _info "Selected components:"
+    _info "Caddy: $(_green "${install_caddy_flag}")"
+    _info "MariaDB: $(_green "${install_mariadb_flag}")"
+    _info "PHP: $(_green "${install_php_flag}")"
     _info "---------------------------"
+
+    # Get version and password inputs based on selection
+    if [[ "${install_mariadb_flag}" == "yes" ]]; then
+        select_mariadb_version
+        read_db_password
+        _info "---------------------------"
+        _info "MariaDB version: $(_green "${mariadb_ver}")"
+        _info "---------------------------"
+    fi
+    if [[ "${install_php_flag}" == "yes" ]]; then
+        select_php_version
+        _info "---------------------------"
+        _info "PHP version: $(_green "${php_ver}")"
+        _info "---------------------------"
+    fi
 
     # Confirm installation
     _info "Press any key to start installation, or Ctrl+C to cancel"
@@ -808,31 +884,44 @@ main() {
     clear
 
     # LCMP Installation
-    _info "Starting LCMP (Linux + Caddy + MariaDB + PHP) installation"
+    _info "Starting LCMP installation"
 
     # Install Caddy
-    install_caddy
-    configure_caddy
-
-    # Install MariaDB
-    local mariadb_cnf
-    install_mariadb "${mariadb_ver}" mariadb_cnf
-    configure_mariadb "${db_pass}" "${mariadb_cnf}"
-
-    # Setup Debian maintenance credentials
-    if _check_sys debian || _check_sys ubuntu; then
-        setup_debian_cnf "${db_pass}"
+    if [[ "${install_caddy_flag}" == "yes" ]]; then
+        install_caddy
+        configure_caddy
     fi
 
-    # Install phpMyAdmin
-    install_phpmyadmin "${db_pass}"
+    # Install MariaDB
+    local mariadb_cnf=""
+    if [[ "${install_mariadb_flag}" == "yes" ]]; then
+        install_mariadb "${mariadb_ver}" mariadb_cnf
+        configure_mariadb "${db_pass}" "${mariadb_cnf}"
+        # Setup Debian maintenance credentials
+        if _check_sys debian || _check_sys ubuntu; then
+            setup_debian_cnf "${db_pass}"
+        fi
+    fi
 
     # Install PHP
-    local php_conf php_ini php_fpm php_sock sock_location
-    install_php "${php_ver}" php_conf php_ini php_fpm php_sock sock_location
+    local php_conf="" php_ini="" php_fpm="" php_sock="" sock_location=""
+    if [[ "${install_php_flag}" == "yes" ]]; then
+        install_php "${php_ver}" php_conf php_ini php_fpm php_sock sock_location
+    fi
+
+    # Install phpMyAdmin (only if both MariaDB and PHP are installed)
+    if [[ "${install_mariadb_flag}" == "yes" && "${install_php_flag}" == "yes" ]]; then
+        install_phpmyadmin "${db_pass}"
+    fi
 
     # Configure Caddy default configuration file with correct PHP socket
-    configure_caddy_default_conf "${php_sock}"
+    if [[ "${install_caddy_flag}" == "yes" ]]; then
+        if [[ "${install_php_flag}" == "yes" ]]; then
+            configure_caddy_default_conf "${php_sock}"
+        else
+            configure_caddy_static_conf
+        fi
+    fi
 
     # Install lcmp helper script
     if [[ -f "${SCRIPT_DIR}/conf/lcmp" ]]; then
@@ -841,39 +930,47 @@ main() {
     fi
 
     # Set permission
-    _error_detect "chown -R caddy:caddy /data/www"
+    if [[ "${install_caddy_flag}" == "yes" ]]; then
+        _error_detect "chown -R caddy:caddy /data/www"
+    fi
 
-    # Start services
+    # Start services & Enable services
     _error_detect "systemctl daemon-reload"
-    _error_detect "systemctl start ${php_fpm}"
-    _error_detect "systemctl start caddy"
-    sleep 3
-    _error_detect "systemctl restart ${php_fpm}"
-    _error_detect "systemctl restart caddy"
-    sleep 1
+    if [[ "${install_php_flag}" == "yes" ]]; then
+        _error_detect "systemctl start ${php_fpm}"
+        _error_detect "systemctl enable ${php_fpm}"
+    fi
+    if [[ "${install_caddy_flag}" == "yes" ]]; then
+        _error_detect "systemctl start caddy"
+        _error_detect "systemctl enable caddy"
+    fi
+    # Enable mariadb services
+    if [[ "${install_mariadb_flag}" == "yes" ]]; then
+        _error_detect "systemctl enable mariadb"
+    fi
 
-    # Enable services
-    _error_detect "systemctl enable mariadb"
-    _error_detect "systemctl enable ${php_fpm}"
-    _error_detect "systemctl enable caddy"
-
-    # Cleanup
     pkill -9 gpg-agent 2>/dev/null || true
-
+    sleep 3
     # Show status
     echo
-    _info "systemctl --no-pager -l status mariadb"
-    systemctl --no-pager -l status mariadb || true
-    _info "systemctl --no-pager -l status ${php_fpm}"
-    systemctl --no-pager -l status "${php_fpm}" || true
-    _info "systemctl --no-pager -l status caddy"
-    systemctl --no-pager -l status caddy || true
+    if [[ "${install_mariadb_flag}" == "yes" ]]; then
+        _info "systemctl --no-pager -l status mariadb"
+        systemctl --no-pager -l status mariadb || true
+    fi
+    if [[ "${install_php_flag}" == "yes" ]]; then
+        _info "systemctl --no-pager -l status ${php_fpm}"
+        systemctl --no-pager -l status "${php_fpm}" || true
+    fi
+    if [[ "${install_caddy_flag}" == "yes" ]]; then
+        _info "systemctl --no-pager -l status caddy"
+        systemctl --no-pager -l status caddy || true
+    fi
 
     echo
     _info "netstat -nxtulpe"
     netstat -nxtulpe 2>/dev/null || ss -tunlp
     echo
-    _info "LCMP (Linux + Caddy + MariaDB + PHP) installation completed"
+    _info "LCMP installation completed"
     _info "Intro: $(_green "https://github.com/teddysun/lcmp")"
     _info "Log file: ${LOG_FILE}"
 }
