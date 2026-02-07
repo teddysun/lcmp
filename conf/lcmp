@@ -109,15 +109,81 @@ _check_sys() {
     esac
 }
 
+#==============================================================================
+# Input Validation Helper
+#==============================================================================
+
+_validate_input() {
+    local input="$1"
+    local name="$2"
+    local pattern="${3:-}"
+    local check_exists="${4:-}"
+    local exists_path="${5:-}"
+    
+    if [[ -z "${input}" ]]; then
+        _red "${name} can not be empty.\n"
+        return 1
+    fi
+    if [[ "${input}" =~ [[:space:]] ]]; then
+        _red "${name} can not contain space.\n"
+        return 1
+    fi
+    if [[ -n "${pattern}" && ! "${input}" =~ ${pattern} ]]; then
+        _red "${name} is invalid.\n"
+        return 1
+    fi
+    if [[ "${check_exists}" == "file" && -f "${exists_path}${input}.conf" ]]; then
+        _red "${name} ${input} already exists.\n"
+        return 1
+    fi
+    return 0
+}
+
+_read_validated() {
+    local prompt="$1"
+    local name="$2"
+    local pattern="${3:-}"
+    local check_exists="${4:-}"
+    local exists_path="${5:-}"
+    local var_name="$6"
+    local is_secret="${7:-}"
+    local default_value="${8:-}"
+    
+    local input
+    while true; do
+        if [[ "${is_secret}" == "secret" ]]; then
+            read -s -r -p "${prompt}" input
+            echo
+        else
+            read -r -p "${prompt}" input
+        fi
+        
+        # If the input is empty and a default value exists, use the default value.
+        if [[ -z "${input}" && -n "${default_value}" ]]; then
+            printf -v "${var_name}" '%s' "${default_value}"
+            return 0
+        fi
+        
+        if _validate_input "${input}" "${name}" "${pattern}" "${check_exists}" "${exists_path}"; then
+            printf -v "${var_name}" '%s' "${input}"
+            return 0
+        fi
+    done
+}
+
+#==============================================================================
+# Command Routing with Case-Insensitive Matching
+#==============================================================================
+
 vhost() {
-    case "$1" in
-        [aA][dD][dD])
+    case "$(echo "$1" | tr '[:upper:]' '[:lower:]')" in
+        add)
             add_vhost
             ;;
-        [lL][iI][sS][tT])
+        list)
             list_vhost
             ;;
-        [dD][eE][lL])
+        del)
             del_vhost
             ;;
         *)
@@ -127,18 +193,18 @@ vhost() {
 }
 
 database() {
-    case "$1" in
-        [aA][dD][dD])
+    case "$(echo "$1" | tr '[:upper:]' '[:lower:]')" in
+        add)
             add_database_menu
             add_database
             ;;
-        [lL][iI][sS][tT])
+        list)
             list_database
             ;;
-        [dD][eE][lL])
+        del)
             del_database
             ;;
-        [eE][dD][iI][tT])
+        edit)
             edit_database
             ;;
         *)
@@ -147,80 +213,76 @@ database() {
     esac
 }
 
+#==============================================================================
+# Virtual Host Management
+#==============================================================================
+
 add_vhost() {
-    while true; do
-        read -r -p "[$(date)] Please input a domain (example: www.lamp.sh): " domain
-        if [[ -z "${domain}" ]]; then
-            _red "Domain name can not be empty.\n"
-            continue
-        fi
-        if [[ "${domain}" =~ [[:space:]] ]]; then
-            _red "Domain name can not contain space.\n"
-            continue
-        fi
-        if [[ ! "${domain}" =~ ^[a-zA-Z0-9][-a-zA-Z0-9.]*[a-zA-Z0-9]$ ]]; then
-            _red "Domain name is invalid. Only letters, numbers, hyphen and dot are allowed.\n"
-            continue
-        fi
-        if [[ -f "/etc/caddy/conf.d/${domain}.conf" ]]; then
-            _red "Domain name ${domain} already exists, please check it and try again.\n"
-            continue
-        else
-            _info "Domain name: $(_green "${domain}")"
-            break
-        fi
-    done
+    # Domain input with validation
+    local domain
+    _read_validated \
+        "[$(date)] Please input a domain (example: www.lamp.sh): " \
+        "Domain name" \
+        '^[a-zA-Z0-9][-a-zA-Z0-9.]*[a-zA-Z0-9]$' \
+        "file" \
+        "/etc/caddy/conf.d/" \
+        "domain"
+    
+    _info "Domain name: $(_green "${domain}")"
 
     # Check if domain is a root domain (format: domain.tld, only one dot)
-    redirect_www="n"
+    local redirect_www="n"
+    local www_domain=""
     if [[ "${domain}" != *.*.* ]] && [[ "${domain}" == *.* ]]; then
         www_domain="www.${domain}"
         if [[ ! -f "/etc/caddy/conf.d/${www_domain}.conf" ]]; then
-            read -r -p "[$(date)] Redirect $(_green "${domain}") to $(_green "${www_domain}") (y/n, default: n): " redirect_www
-            if [[ "${redirect_www}" == "y" ]] || [[ "${redirect_www}" == "Y" ]]; then
+            local choice
+            read -r -p "[$(date)] Redirect $(_green "${domain}") to $(_green "${www_domain}") (y/n, default: n): " choice
+            if [[ "${choice}" =~ ^[Yy]$ ]]; then
                 redirect_www="y"
                 _info "Will redirect $(_green "${domain}") to $(_green "${www_domain}")"
             fi
         fi
     fi
 
-    while true; do
-        read -r -p "[$(date)] Please input a directory for domain ${domain} (default directory: /data/www/${domain}): " vhostdir
-        if [[ -z "${vhostdir}" ]]; then
-            vhostdir="/data/www/${domain}"
-            break
-        fi
-        if [[ "${vhostdir}" != "/"* ]]; then
-            _red "Directory must be an absolute path (start with /).\n"
-            continue
-        fi
-        if [[ "${vhostdir}" =~ [[:space:]] ]]; then
-            _red "Directory can not contain whitespace characters.\n"
-            continue
-        fi
-        if [[ "${vhostdir}" == *[:\;*?\"\<\>\|]* ]]; then
-            _red "Directory contains invalid characters.\n"
-            continue
-        fi
-        break
-    done
+    # Virtual Host directory input
+    local vhostdir
+    _read_validated \
+        "[$(date)] Please input a directory for domain ${domain} (default: /data/www/${domain}): " \
+        "Directory" \
+        '^/' \
+        "" "" \
+        "vhostdir" \
+        "" \
+        "/data/www/${domain}"
+    
     _info "Virtual Host directory: $(_green "${vhostdir}")"
 
+    # Database creation option
+    local create_database
     read -r -p "[$(date)] Create a MariaDB database and a user with same name (y/n): " create_database
-    if [[ "${create_database}" == "y" ]] || [[ "${create_database}" == "Y" ]]; then
+    if [[ "${create_database}" =~ ^[Yy]$ ]]; then
         verify_db_password
         add_database_menu
     fi
+    
+    # Create directories and permissions
     _info "Create Virtual Host directory"
     _error_detect "mkdir -p ${vhostdir}"
     _info "Set permissions of Virtual Host directory"
     _error_detect "chmod -R 755 ${vhostdir}"
     _error_detect "chown -R caddy:caddy ${vhostdir}"
-    add_vhost_config
-    if [[ "${create_database}" == "y" ]] || [[ "${create_database}" == "Y" ]]; then
+    
+    # Generate config
+    add_vhost_config "${domain}" "${www_domain}" "${redirect_www}" "${vhostdir}"
+    
+    if [[ "${create_database}" =~ ^[Yy]$ ]]; then
         add_database
     fi
+    
     _error_detect "systemctl restart caddy"
+    
+    # Output summary
     _info "Virtual Host information:"
     _info "Domain name: $(_green "${domain}")"
     if [[ "${redirect_www}" == "y" ]]; then
@@ -229,7 +291,7 @@ add_vhost() {
     _info "Virtual Host directory: $(_green "${vhostdir}")"
     _info "Virtual Host config: $(_green "/etc/caddy/conf.d/${domain}.conf")"
     list_vhost
-    if [[ "${create_database}" == "y" ]] || [[ "${create_database}" == "Y" ]]; then
+    if [[ "${create_database}" =~ ^[Yy]$ ]]; then
         _info "Database username: ${database_name}"
         _info "Database userpassword: ${mysql_password}"
         _info "Database name: ${database_name}"
@@ -237,55 +299,41 @@ add_vhost() {
 }
 
 add_vhost_config() {
+    local domain="$1"
+    local www_domain="$2"
+    local redirect_www="$3"
+    local vhostdir="$4"
+    
+    local domains="${domain}"
+    local redirect_block=""
+    
     if [[ "${redirect_www}" == "y" ]]; then
-        cat >"/etc/caddy/conf.d/${domain}.conf" <<EOF
-${domain}, ${www_domain} {
-	header {
-		Strict-Transport-Security "max-age=31536000; preload"
-		X-Content-Type-Options nosniff
-		X-Frame-Options SAMEORIGIN
-	}
-	@www host ${domain}
-	redir @www https://${www_domain}{uri} permanent
-	root * ${vhostdir}
-	encode gzip zstd
-	php_fastcgi ${php_sock}
-	file_server {
-		index index.html
-	}
-	log {
-		output file /var/log/caddy/access_${domain}.log {
-			roll_size 32mb
-			roll_keep 3
-			roll_keep_for 7d
-		}
-	}
-}
-EOF
-    else
-        cat >"/etc/caddy/conf.d/${domain}.conf" <<EOF
-${domain} {
-	header {
-		Strict-Transport-Security "max-age=31536000; preload"
-		X-Content-Type-Options nosniff
-		X-Frame-Options SAMEORIGIN
-	}
-	root * ${vhostdir}
-	encode gzip zstd
-	php_fastcgi ${php_sock}
-	file_server {
-		index index.html
-	}
-	log {
-		output file /var/log/caddy/access_${domain}.log {
-			roll_size 32mb
-			roll_keep 3
-			roll_keep_for 7d
-		}
-	}
-}
-EOF
+        domains="${domain}, ${www_domain}"
+        redirect_block=$'    @www host '"${domain}"$'\n    redir @www https://'"${www_domain}"$'{uri} permanent\n'
     fi
+    
+    cat >"/etc/caddy/conf.d/${domain}.conf" <<EOF
+${domains} {
+    header {
+        Strict-Transport-Security "max-age=31536000; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options SAMEORIGIN
+    }
+${redirect_block}    root * ${vhostdir}
+    encode gzip zstd
+    php_fastcgi ${php_sock}
+    file_server {
+        index index.html
+    }
+    log {
+        output file /var/log/caddy/access_${domain}.log {
+            roll_size 32mb
+            roll_keep 3
+            roll_keep_for 7d
+        }
+    }
+}
+EOF
 }
 
 list_vhost() {
@@ -304,25 +352,19 @@ list_vhost() {
 del_vhost() {
     local vhostdir
     list_vhost
-    while true; do
-        read -r -p "[$(date)] Please enter a domain you want to delete: " domain
-        if [[ -z "${domain}" ]]; then
-            _red "Domain name can not be empty.\n"
-            continue
-        fi
-        if [[ "${domain}" =~ [[:space:]] ]]; then
-            _red "Domain name can not contain space.\n"
-            continue
-        fi
-        if [[ ! "${domain}" =~ ^[a-zA-Z0-9][-a-zA-Z0-9.]*[a-zA-Z0-9]$ ]]; then
-            _red "Domain name is invalid. Only letters, numbers, hyphen and dot are allowed.\n"
-            continue
-        fi
-        _info "Domain name: $(_green "${domain}")"
-        break
-    done
+    
+    local domain
+    _read_validated \
+        "[$(date)] Please enter a domain you want to delete: " \
+        "Domain name" \
+        '^[a-zA-Z0-9][-a-zA-Z0-9.]*[a-zA-Z0-9]$' \
+        "" "" \
+        "domain"
+    
+    _info "Domain name: $(_green "${domain}")"
+    
     if [[ -f "/etc/caddy/conf.d/${domain}.conf" ]]; then
-        vhostdir=$(grep "root *" "/etc/caddy/conf.d/${domain}.conf" | awk '{print $3}')
+        vhostdir=$(grep "root \*" "/etc/caddy/conf.d/${domain}.conf" | awk '{print $3}')
         _error_detect "rm -f /etc/caddy/conf.d/${domain}.conf"
         _info "Domain $(_red "${domain}") has been deleted."
         if [[ -n "${vhostdir}" ]]; then
@@ -337,6 +379,10 @@ del_vhost() {
     fi
 }
 
+#==============================================================================
+# Database Helpers
+#==============================================================================
+
 make_temp_mycnf() {
     cat >/tmp/.my.cnf<<EOF
 [client]
@@ -347,12 +393,8 @@ EOF
 }
 
 clean_temp_mycnf() {
-    if [[ -s "/tmp/.my.cnf" ]]; then
-        rm -f /tmp/.my.cnf
-    fi
-    if [[ -s "/tmp/.mysql.tmp" ]]; then
-        rm -f /tmp/.mysql.tmp
-    fi
+    [[ -s "/tmp/.my.cnf" ]] && rm -f /tmp/.my.cnf
+    [[ -s "/tmp/.mysql.tmp" ]] && rm -f /tmp/.mysql.tmp
 }
 
 do_query() {
@@ -362,13 +404,33 @@ do_query() {
     return $?
 }
 
+run_sql() {
+    local sql_content="$1"
+    local success_msg="$2"
+    local fail_msg="$3"
+    
+    local tmpfile
+    tmpfile=$(mktemp /tmp/.lcmp.XXXXXX.sql)
+    echo "${sql_content}" > "${tmpfile}"
+    chmod 600 "${tmpfile}"
+    
+    if /usr/bin/mariadb --defaults-file=/tmp/.my.cnf < "${tmpfile}" >/dev/null 2>&1; then
+        _info "${success_msg}"
+    else
+        _info "${fail_msg}"
+    fi
+    rm -f "${tmpfile}"
+}
+
 verify_db_password() {
-    status=1
+    local status=1
     while [[ ${status} -eq 1 ]]; do
+        local db_root_password
         read -s -r -p "[$(date)] Please input current root password of Database (password will not shown): " db_root_password
         echo
         if ! /usr/bin/mariadb -uroot -p"${db_root_password}" -e "exit" >/dev/null 2>&1; then
             _red "MariaDB root password is incorrect, Please check it and try again.\n"
+            continue
         fi
         make_temp_mycnf "${db_root_password}"
         do_query "exit"
@@ -377,29 +439,27 @@ verify_db_password() {
 }
 
 enter_database_name() {
-    while true; do
-        read -r -p "[$(date)] Please input database name: " database_name
-        if [[ -z "${database_name}" ]]; then
-            _red "Database name can not be empty!\n"
-        else
-            break
-        fi
-    done
+    _read_validated \
+        "[$(date)] Please input database name: " \
+        "Database name" \
+        "" "" "" \
+        "database_name"
 }
 
 add_database_menu() {
     enter_database_name
     _info "You will create a MariaDB database and a user with same name: $(_green "${database_name}")"
-    read -s -r -p "[$(date)] Please input password for MariaDB user ${database_name} (password will not shown): " mysql_password
-    if [[ -z "${mysql_password}" ]]; then
-        mysql_password="${database_name}"
-    fi
+    
+    local password_input
+    read -s -r -p "[$(date)] Please input password for MariaDB user ${database_name} (password will not shown): " password_input
+    mysql_password="${password_input:-${database_name}}"
     echo
     _info "MariaDB database $(_green "${database_name}")'s password: ${mysql_password}"
 }
 
 add_database() {
-    cat >/tmp/.add_mysql.sql<<EOF
+    local sql_content
+    sql_content=$(cat <<EOF
 CREATE USER '${database_name}'@'localhost' IDENTIFIED BY '${mysql_password}';
 CREATE USER '${database_name}'@'127.0.0.1' IDENTIFIED BY '${mysql_password}';
 GRANT USAGE ON *.* TO '${database_name}'@'localhost' IDENTIFIED BY '${mysql_password}';
@@ -409,12 +469,10 @@ GRANT ALL PRIVILEGES ON \`${database_name}\`.* TO '${database_name}'@'localhost'
 GRANT ALL PRIVILEGES ON \`${database_name}\`.* TO '${database_name}'@'127.0.0.1';
 FLUSH PRIVILEGES;
 EOF
-    if /usr/bin/mariadb --defaults-file=/tmp/.my.cnf </tmp/.add_mysql.sql >/dev/null 2>&1; then
-        _info "Add database $(_green "${database_name}") successfully."
-    else
-        _info "Add database $(_red "${database_name}") failed."
-    fi
-    rm -f /tmp/.add_mysql.sql
+)
+    run_sql "${sql_content}" \
+        "Add database $(_green "${database_name}") successfully." \
+        "Add database $(_red "${database_name}") failed."
 }
 
 list_database() {
@@ -428,81 +486,102 @@ list_database() {
 del_database() {
     list_database
     enter_database_name
-    if [[ "${database_name}" == "information_schema" || "${database_name}" == "mysql" || "${database_name}" == "performance_schema" || "${database_name}" == "sys" ]]; then
+    
+    if [[ "${database_name}" =~ ^(information_schema|mysql|performance_schema|sys)$ ]]; then
         _error "MariaDB system database $(_red "${database_name}") cannot be deleted."
     fi
+    
     _info "Your will delete a MariaDB database and a user with same name: ${database_name}"
     _info "Wait 10 seconds, Press ctrl+c to cancel ..."
     _sleep_sec 10
-    cat >/tmp/.del.mysql.sql<<EOF
+    
+    local sql_content
+    sql_content=$(cat <<EOF
 DROP USER '${database_name}'@'127.0.0.1';
 DROP USER '${database_name}'@'localhost';
 DROP DATABASE IF EXISTS \`${database_name}\`;
 FLUSH PRIVILEGES;
 EOF
-    if /usr/bin/mariadb --defaults-file=/tmp/.my.cnf </tmp/.del.mysql.sql; then
-        _info "Delete database $(_green "${database_name}") successfully."
-    else
-        _info "Delete database $(_red "${database_name}") failed."
-    fi
-    rm -f /tmp/.del.mysql.sql
+)
+    run_sql "${sql_content}" \
+        "Delete database $(_green "${database_name}") successfully." \
+        "Delete database $(_red "${database_name}") failed."
 }
 
 edit_database() {
-    while true; do
-        read -r -p "[$(date)] Please input database username: " database_username
-        if [[ -z "${database_username}" ]]; then
-            _red "Database username can not be empty!\n"
-        else
-            break
-        fi
+    local database_username
+    _read_validated \
+        "[$(date)] Please input database username: " \
+        "Database username" \
+        "" "" "" \
+        "database_username"
+    
+    local database_username_passwd
+    _read_validated \
+        "[$(date)] Please input NEW password (password will not shown): " \
+        "NEW password" \
+        "" "" "" \
+        "database_username_passwd" \
+        "secret"
+    
+    local sql_content
+    sql_content=$(cat <<EOF
+SET PASSWORD FOR '${database_username}'@'127.0.0.1' = PASSWORD('${database_username_passwd}');
+SET PASSWORD FOR '${database_username}'@'localhost' = PASSWORD('${database_username_passwd}');
+FLUSH PRIVILEGES;
+EOF
+)
+    run_sql "${sql_content}" \
+        "Edit user $(_green "${database_username}")'s password successfully." \
+        "Edit user $(_red "${database_username}")'s password failed."
+}
+
+#==============================================================================
+# Service Management
+#==============================================================================
+
+manage_services() {
+    local action="$1"  # start, stop, status
+    local label="$2"   # Starting, Stopping, Checking
+    
+    _info "${label} LCMP..."
+    local services=("caddy" "mariadb" "${php_fpm}")
+    
+    for svc in "${services[@]}"; do
+        case "${action}" in
+            start)
+                _error_detect "systemctl start ${svc}"
+                ;;
+            stop)
+                _error_detect "systemctl stop ${svc}"
+                ;;
+            status)
+                _info "systemctl status ${svc}"
+                systemctl --no-pager -l status "${svc}" || true
+                echo
+                ;;
+        esac
     done
-    while true; do
-        read -s -r -p "[$(date)] Please input NEW password (password will not shown): " database_username_passwd
-        if [[ -z "${database_username_passwd}" ]]; then
-            _red "NEW password can not be empty!\n"
-        else
-            break
-        fi
-    done
-    echo
-    do_query "SET PASSWORD FOR '${database_username}'@'127.0.0.1' = PASSWORD('${database_username_passwd}');"
-    RT1=$?
-    do_query "SET PASSWORD FOR '${database_username}'@'localhost' = PASSWORD('${database_username_passwd}');"
-    RT2=$?
-    if [[ $((RT1 + RT2)) -eq 0 ]]; then
-        _info "Edit user $(_green "${database_username}")'s password successfully."
-    else
-        _info "Edit user $(_red "${database_username}")'s password failed."
-    fi
-    do_query "FLUSH PRIVILEGES;"
+    
+    [[ "${action}" != "status" ]] && _info "${label} LCMP completed"
 }
 
 lcmp_start() {
-    _info "Starting LCMP..."
-    _error_detect "systemctl start caddy"
-    _error_detect "systemctl start mariadb"
-    _error_detect "systemctl start ${php_fpm}"
-    _info "Start LCMP completed"
+    manage_services "start" "Starting"
 }
 
 lcmp_stop() {
-    _info "Stopping LCMP..."
-    _error_detect "systemctl stop caddy"
-    _error_detect "systemctl stop mariadb"
-    _error_detect "systemctl stop ${php_fpm}"
-    _info "Stop LCMP completed"
+    manage_services "stop" "Stopping"
+}
+
+lcmp_restart() {
+    manage_services "stop" "Stopping"
+    sleep 1
+    manage_services "start" "Starting"
 }
 
 lcmp_status() {
-    _info "systemctl status caddy"
-    systemctl --no-pager -l status caddy || true
-    echo
-    _info "systemctl status mariadb"
-    systemctl --no-pager -l status mariadb || true
-    echo
-    _info "systemctl status ${php_fpm}"
-    systemctl --no-pager -l status "${php_fpm}" || true
+    manage_services "status" "Checking"
 }
 
 lcmp_version() {
@@ -522,6 +601,7 @@ check_env() {
         php_fpm="php-fpm"
     elif _check_sys debian || _check_sys ubuntu; then
         php_sock="unix//run/php/php-fpm.sock"
+        local php_ver
         php_ver="$(/usr/bin/php -v | head -n1 | awk '{print $2}' | cut -d. -f1-2)"
         php_fpm="php${php_ver}-fpm"
     else
@@ -529,14 +609,39 @@ check_env() {
     fi
 }
 
+#==============================================================================
+# Usage Information
+#==============================================================================
+
+show_usage() {
+    _info "Usage:"
+    _info "  $(_green "lcmp start")      Start all LCMP services"
+    _info "  $(_green "lcmp stop")       Stop all LCMP services"
+    _info "  $(_green "lcmp restart")    Restart all LCMP services"
+    _info "  $(_green "lcmp status")     Check all LCMP services status"
+    _info "  $(_green "lcmp version")    Print all of LCMP software version"
+    _info "  $(_green "lcmp vhost add")  Create a new Caddy Virtual Host"
+    _info "  $(_green "lcmp vhost list") List all of Caddy Virtual Hosts"
+    _info "  $(_green "lcmp vhost del")  Delete a Caddy Virtual Host"
+    _info "  $(_green "lcmp db add")     Create a MariaDB database and a user with same name"
+    _info "  $(_green "lcmp db list")    List all of MariaDB databases"
+    _info "  $(_green "lcmp db del")     Delete a MariaDB database and a user with same name"
+    _info "  $(_green "lcmp db edit")    Update a MariaDB database username's password"
+}
+
+#==============================================================================
+# Main Entry Point
+#==============================================================================
+
 main() {
     # Check root
     if [[ ${EUID} -ne 0 ]]; then
         _red "This script must be run as root!\n"
         exit 1
     fi
-    arg1="${1:-}"
-    arg2="${2:-}"
+    
+    local arg1="${1:-}"
+    local arg2="${2:-}"
 
     _info "+-------------------------------------------+"
     _info "|    Manager for LCMP, Written by Teddysun  |"
@@ -546,7 +651,7 @@ main() {
 
     check_env
 
-    case "${arg1}" in
+    case "$(echo "${arg1}" | tr '[:upper:]' '[:lower:]')" in
         start)
             lcmp_start
             ;;
@@ -554,9 +659,7 @@ main() {
             lcmp_stop
             ;;
         restart)
-            lcmp_stop
-            sleep 1
-            lcmp_start
+            lcmp_restart
             ;;
         status)
             lcmp_status
@@ -573,19 +676,7 @@ main() {
             clean_temp_mycnf
             ;;
         *)
-            _info "Usage:"
-            _info "  $(_green "lcmp start")      Start all LCMP services"
-            _info "  $(_green "lcmp stop")       Stop all LCMP services"
-            _info "  $(_green "lcmp restart")    Restart all LCMP services"
-            _info "  $(_green "lcmp status")     Check all LCMP services status"
-            _info "  $(_green "lcmp version")    Print all of LCMP software version"
-            _info "  $(_green "lcmp vhost add")  Create a new Caddy Virtual Host"
-            _info "  $(_green "lcmp vhost list") List all of Caddy Virtual Hosts"
-            _info "  $(_green "lcmp vhost del")  Delete a Caddy Virtual Host"
-            _info "  $(_green "lcmp db add")     Create a MariaDB database and a user with same name"
-            _info "  $(_green "lcmp db list")    List all of MariaDB databases"
-            _info "  $(_green "lcmp db del")     Delete a MariaDB database and a user with same name"
-            _info "  $(_green "lcmp db edit")    Update a MariaDB database username's password"
+            show_usage
             ;;
     esac
 }
