@@ -9,9 +9,8 @@
 #   - Ubuntu 20.04/22.04/24.04
 #
 # Copyright (C) 2023 - 2026 Teddysun <i@teddysun.com>
-set -euo pipefail
+set -uo pipefail
 shopt -s inherit_errexit 2>/dev/null || true
-
 trap _exit INT QUIT TERM
 
 _red() {
