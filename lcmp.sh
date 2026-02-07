@@ -8,7 +8,7 @@
 #   - Ubuntu 20.04/22.04/24.04
 #
 # Copyright (C) 2023 - 2026 Teddysun <i@teddysun.com>
-set -euo pipefail
+set -uo pipefail
 shopt -s inherit_errexit 2>/dev/null || true
 trap _exit_handler INT QUIT TERM
 
@@ -866,7 +866,7 @@ _check_os_support() {
         done
     fi
 
-    [[ "${supported}" != "true" ]] && _error "Unsupported OS. Please use Enterprise Linux 8+, Debian 11+, or Ubuntu 20.04+"
+    [[ "${supported}" == "false" ]] && _error "Unsupported OS. Please use Enterprise Linux 8+, Debian 11+, or Ubuntu 20.04+"
 }
 
 _get_component_selection() {
