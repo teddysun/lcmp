@@ -8,7 +8,6 @@
 #   - Ubuntu 20.04/22.04/24.04
 #
 # Copyright (C) 2023 - 2026 Teddysun <i@teddysun.com>
-
 set -euo pipefail
 shopt -s inherit_errexit 2>/dev/null || true
 trap _exit_handler INT QUIT TERM
@@ -196,6 +195,19 @@ get_char() {
 }
 
 #==============================================================================
+# Package Installation Abstraction
+#==============================================================================
+
+# Unified package installer
+install_packages() {
+    if _check_sys rhel; then
+        _error_detect "dnf install -y $*"
+    elif _check_sys debian || _check_sys ubuntu; then
+        _error_detect "apt-get install -y $*"
+    fi
+}
+
+#==============================================================================
 # RHEL Initialization
 #==============================================================================
 
@@ -241,8 +253,8 @@ initialize_rhel() {
 
     # Update cache and install base packages
     _error_detect "dnf makecache"
-    _error_detect "dnf install -y vim nano tar zip unzip net-tools screen git virt-what wget mtr traceroute iftop htop jq tree"
-    _error_detect "dnf install -y libnghttp2 libnghttp2-devel c-ares c-ares-devel curl libcurl libcurl-devel"
+    install_packages vim nano tar zip unzip net-tools screen git virt-what wget mtr traceroute iftop htop jq tree
+    install_packages libnghttp2 libnghttp2-devel c-ares c-ares-devel curl libcurl libcurl-devel
 
     # Disable SELinux
     if [[ -s "/etc/selinux/config" ]] && grep -q 'SELINUX=enforcing' /etc/selinux/config; then
@@ -279,8 +291,8 @@ initialize_rhel() {
 
 initialize_deb() {
     _error_detect "apt-get update"
-    _error_detect "apt-get -y install lsb-release ca-certificates curl gnupg"
-    _error_detect "apt-get -y install vim nano tar zip unzip net-tools screen git virt-what wget mtr traceroute iftop htop jq tree"
+    install_packages lsb-release ca-certificates curl gnupg
+    install_packages vim nano tar zip unzip net-tools screen git virt-what wget mtr traceroute iftop htop jq tree
 
     # Configure UFW
     if ufw status &>/dev/null; then
@@ -500,10 +512,10 @@ configure_php_rhel() {
     _error_detect "dnf module install -y php:remi-${php_ver}"
 
     # Install PHP packages
-    _error_detect "dnf install -y php-common php-fpm php-cli php-bcmath php-embedded php-gd php-imap php-mysqlnd php-dba php-pdo php-pdo-dblib"
-    _error_detect "dnf install -y php-pgsql php-odbc php-enchant php-gmp php-intl php-ldap php-snmp php-soap php-tidy php-opcache php-process"
-    _error_detect "dnf install -y php-pspell php-shmop php-sodium php-ffi php-brotli php-lz4 php-xz php-zstd"
-    _error_detect "dnf install -y php-pecl-imagick-im7 php-pecl-zip php-pecl-rar php-pecl-grpc php-pecl-yaml php-pecl-uuid"
+    install_packages php-common php-fpm php-cli php-bcmath php-embedded php-gd php-imap php-mysqlnd php-dba php-pdo php-pdo-dblib
+    install_packages php-pgsql php-odbc php-enchant php-gmp php-intl php-ldap php-snmp php-soap php-tidy php-opcache php-process
+    install_packages php-pspell php-shmop php-sodium php-ffi php-brotli php-lz4 php-xz php-zstd
+    install_packages php-pecl-imagick-im7 php-pecl-zip php-pecl-rar php-pecl-grpc php-pecl-yaml php-pecl-uuid
 }
 
 configure_php_deb() {
@@ -520,15 +532,19 @@ configure_php_deb() {
     _error_detect "apt-get update"
 
     # Install PHP packages
-    _error_detect "apt-get install -y php-common php${php_ver}-common php${php_ver}-cli php${php_ver}-fpm php${php_ver}-opcache php${php_ver}-readline"
-    _error_detect "apt-get install -y libphp${php_ver}-embed php${php_ver}-bcmath php${php_ver}-gd php${php_ver}-imap php${php_ver}-mysql php${php_ver}-dba php${php_ver}-mongodb php${php_ver}-sybase"
-    _error_detect "apt-get install -y php${php_ver}-pgsql php${php_ver}-odbc php${php_ver}-enchant php${php_ver}-gmp php${php_ver}-intl php${php_ver}-ldap php${php_ver}-snmp php${php_ver}-soap"
-    _error_detect "apt-get install -y php${php_ver}-mbstring php${php_ver}-curl php${php_ver}-pspell php${php_ver}-xml php${php_ver}-zip php${php_ver}-bz2 php${php_ver}-lz4 php${php_ver}-zstd"
-    _error_detect "apt-get install -y php${php_ver}-tidy php${php_ver}-sqlite3 php${php_ver}-imagick php${php_ver}-grpc php${php_ver}-yaml php${php_ver}-uuid"
+    install_packages "php-common" "php${php_ver}-common" "php${php_ver}-cli" "php${php_ver}-fpm" "php${php_ver}-opcache" "php${php_ver}-readline"
+    install_packages "libphp${php_ver}-embed" "php${php_ver}-bcmath" "php${php_ver}-gd" "php${php_ver}-imap" "php${php_ver}-mysql" "php${php_ver}-dba" "php${php_ver}-mongodb" "php${php_ver}-sybase"
+    install_packages "php${php_ver}-pgsql" "php${php_ver}-odbc" "php${php_ver}-enchant" "php${php_ver}-gmp" "php${php_ver}-intl" "php${php_ver}-ldap" "php${php_ver}-snmp" "php${php_ver}-soap"
+    install_packages "php${php_ver}-mbstring" "php${php_ver}-curl" "php${php_ver}-pspell" "php${php_ver}-xml" "php${php_ver}-zip" "php${php_ver}-bz2" "php${php_ver}-lz4" "php${php_ver}-zstd"
+    install_packages "php${php_ver}-tidy" "php${php_ver}-sqlite3" "php${php_ver}-imagick" "php${php_ver}-grpc" "php${php_ver}-yaml" "php${php_ver}-uuid"
 
     # Create PHP directories
     _error_detect "mkdir -m770 /var/lib/php/{session,wsdlcache,opcache}"
 }
+
+#==============================================================================
+# PHP Configuration
+#==============================================================================
 
 configure_php_settings() {
     local php_conf="$1"
@@ -536,46 +552,85 @@ configure_php_settings() {
     local sock_location="$3"
     local is_rhel="$4"
 
-    # Update pool configuration
+    # Pool configuration - user/group
     sed -i "s@^user.*@user = caddy@" "${php_conf}"
     sed -i "s@^group.*@group = caddy@" "${php_conf}"
 
     if [[ "$is_rhel" == "true" ]]; then
-        sed -i "s@^listen.acl_users.*@listen.acl_users = apache,nginx,caddy@" "${php_conf}"
-        sed -i "s@^;php_value\[opcache.file_cache\].*@php_value[opcache.file_cache] = /var/lib/php/opcache@" "${php_conf}"
+        _configure_php_rhel_pool "${php_conf}"
     else
-        sed -i "s@^listen.owner.*@;&@" "${php_conf}"
-        sed -i "s@^listen.group.*@;&@" "${php_conf}"
-        sed -i "s@^;listen.acl_users.*@listen.acl_users = caddy@" "${php_conf}"
-        sed -i "s@^;listen.allowed_clients.*@listen.allowed_clients = 127.0.0.1@" "${php_conf}"
-        sed -i "s@^pm.max_children.*@pm.max_children = 50@" "${php_conf}"
-        sed -i "s@^pm.start_servers.*@pm.start_servers = 5@" "${php_conf}"
-        sed -i "s@^pm.min_spare_servers.*@pm.min_spare_servers = 5@" "${php_conf}"
-        sed -i "s@^pm.max_spare_servers.*@pm.max_spare_servers = 35@" "${php_conf}"
-        sed -i "s@^;slowlog.*@slowlog = /var/log/www-slow.log@" "${php_conf}"
-        sed -i "s@^;php_admin_value\[error_log\].*@php_admin_value[error_log] = /var/log/www-error.log@" "${php_conf}"
-        sed -i "s@^;php_admin_flag\[log_errors\].*@php_admin_flag[log_errors] = on@" "${php_conf}"
+        _configure_php_deb_pool "${php_conf}"
+    fi
 
-        cat >> "${php_conf}" << EOF
+    # php.ini configuration using associative array
+    _configure_php_ini "${php_ini}" "${sock_location}"
+
+    _info "PHP configuration completed"
+}
+
+_configure_php_rhel_pool() {
+    local php_conf="$1"
+    
+    sed -i "s@^listen.acl_users.*@listen.acl_users = apache,nginx,caddy@" "${php_conf}"
+    sed -i "s@^;php_value\[opcache.file_cache\].*@php_value[opcache.file_cache] = /var/lib/php/opcache@" "${php_conf}"
+}
+
+_configure_php_deb_pool() {
+    local php_conf="$1"
+    
+    # Comment out listen.owner and listen.group (consistent with original script)
+    sed -i 's@^listen.owner.*@;&@' "${php_conf}"
+    sed -i 's@^listen.group.*@;&@' "${php_conf}"
+    
+    declare -A pool_settings=(
+        ["listen.acl_users"]="caddy"
+        ["listen.allowed_clients"]="127.0.0.1"
+        ["pm.max_children"]="50"
+        ["pm.start_servers"]="5"
+        ["pm.min_spare_servers"]="5"
+        ["pm.max_spare_servers"]="35"
+        ["slowlog"]="/var/log/www-slow.log"
+    )
+    
+    for key in "${!pool_settings[@]}"; do
+        if [[ "${key}" == listen.* ]]; then
+            sed -i "s@^;${key}.*@${key} = ${pool_settings[${key}]}@" "${php_conf}"
+        else
+            sed -i "s@^${key}.*@${key} = ${pool_settings[${key}]}@" "${php_conf}"
+        fi
+    done
+    
+    sed -i "s@^;php_admin_value\[error_log\].*@php_admin_value[error_log] = /var/log/www-error.log@" "${php_conf}"
+    sed -i "s@^;php_admin_flag\[log_errors\].*@php_admin_flag[log_errors] = on@" "${php_conf}"
+
+    cat >> "${php_conf}" << EOF
 php_value[session.save_handler] = files
 php_value[session.save_path]    = /var/lib/php/session
 php_value[soap.wsdl_cache_dir]  = /var/lib/php/wsdlcache
 php_value[opcache.file_cache]   = /var/lib/php/opcache
 EOF
-    fi
+}
 
-    # Update php.ini
-    sed -i "s@^disable_functions.*@disable_functions = passthru,exec,shell_exec,system,chroot,chgrp,chown,proc_open,proc_get_status,ini_alter,ini_restore@" "${php_ini}"
-    sed -i "s@^max_execution_time.*@max_execution_time = 300@" "${php_ini}"
-    sed -i "s@^max_input_time.*@max_input_time = 300@" "${php_ini}"
-    sed -i "s@^post_max_size.*@post_max_size = 128M@" "${php_ini}"
-    sed -i "s@^upload_max_filesize.*@upload_max_filesize = 128M@" "${php_ini}"
-    sed -i "s@^expose_php.*@expose_php = Off@" "${php_ini}"
-    sed -i "s@^short_open_tag.*@short_open_tag = On@" "${php_ini}"
+_configure_php_ini() {
+    local php_ini="$1"
+    local sock_location="$2"
+    
+    declare -A php_settings=(
+        ["disable_functions"]="passthru,exec,shell_exec,system,chroot,chgrp,chown,proc_open,proc_get_status,ini_alter,ini_restore"
+        ["max_execution_time"]="300"
+        ["max_input_time"]="300"
+        ["post_max_size"]="128M"
+        ["upload_max_filesize"]="128M"
+        ["expose_php"]="Off"
+        ["short_open_tag"]="On"
+    )
+    
+    for key in "${!php_settings[@]}"; do
+        sed -i "s@^${key}.*@${key} = ${php_settings[${key}]}@" "${php_ini}"
+    done
+    
     sed -i "s#mysqli.default_socket.*#mysqli.default_socket = ${sock_location}#" "${php_ini}"
     sed -i "s#pdo_mysql.default_socket.*#pdo_mysql.default_socket = ${sock_location}#" "${php_ini}"
-
-    _info "PHP configuration completed"
 }
 
 configure_caddy() {
@@ -608,36 +663,16 @@ EOF
     _info "Caddy configuration completed"
 }
 
-configure_caddy_default_conf() {
-    local php_sock="$1"
-    # Create site default configuration file
-    cat > "/etc/caddy/conf.d/default.conf" << EOF
-:80 {
-    header {
-        Strict-Transport-Security "max-age=31536000; preload"
-        X-Content-Type-Options nosniff
-        X-Frame-Options SAMEORIGIN
-    }
-    root * /data/www/default
-    encode gzip zstd
-    php_fastcgi ${php_sock}
-    file_server {
-        index index.html
-    }
-    log {
-        output file /var/log/caddy/access.log {
-            roll_size 32mb
-            roll_keep 3
-            roll_keep_for 7d
-        }
-    }
-}
-EOF
-    _info "Caddy default configuration file created"
-}
+#==============================================================================
+# Caddy Site Configuration
+#==============================================================================
 
-configure_caddy_static_conf() {
-    # Create site default configuration file (static only, no PHP)
+configure_caddy_site_conf() {
+    local php_sock="${1:-}"
+    local php_directive=""
+    
+    [[ -n "${php_sock}" ]] && php_directive="php_fastcgi ${php_sock}"
+    
     cat > "/etc/caddy/conf.d/default.conf" << EOF
 :80 {
     header {
@@ -647,6 +682,7 @@ configure_caddy_static_conf() {
     }
     root * /data/www/default
     encode gzip zstd
+    ${php_directive}
     file_server {
         index index.html
     }
@@ -659,7 +695,7 @@ configure_caddy_static_conf() {
     }
 }
 EOF
-    _info "Caddy static configuration file created"
+    _info "Caddy configuration file created"
 }
 
 install_phpmyadmin() {
@@ -715,7 +751,7 @@ install_mariadb() {
 
     if _check_sys rhel; then
         _error_detect "dnf config-manager --disable mariadb-maxscale"
-        _error_detect "dnf install -y MariaDB-common MariaDB-server MariaDB-client MariaDB-shared MariaDB-backup"
+        install_packages MariaDB-common MariaDB-server MariaDB-client MariaDB-shared MariaDB-backup
         cnf_path_ref="/etc/my.cnf.d/server.cnf"
     elif _check_sys debian || _check_sys ubuntu; then
         if [[ -f "/etc/apt/sources.list.d/mariadb.list" ]]; then
@@ -785,8 +821,11 @@ ask_install_component() {
     esac
 }
 
-main() {
+#==============================================================================
+# Main Function Phases
+#==============================================================================
 
+_check_prerequisites() {
     # Check root
     if [[ ${EUID} -ne 0 ]]; then
         _red "This script must be run as root!\n"
@@ -797,7 +836,9 @@ main() {
     mkdir -p "$(dirname "${LOG_FILE}")"
     if [[ ! -f "${LOG_FILE}" ]]; then touch "${LOG_FILE}"; fi
     chmod 600 "${LOG_FILE}"
+}
 
+_show_banner() {
     _info "+-------------------------------------------+"
     _info "|   LCMP Installation, Written by Teddysun  |"
     _info "+-------------------------------------------+"
@@ -805,8 +846,9 @@ main() {
     _info "Arch: $(uname -m)"
     _info "Kernel: $(uname -r)"
     _info "Starting LCMP installation script"
+}
 
-    # Check OS support
+_check_os_support() {
     local supported="false"
     if _check_sys rhel; then
         for ver in 8 9 10; do
@@ -825,11 +867,13 @@ main() {
     fi
 
     [[ "${supported}" != "true" ]] && _error "Unsupported OS. Please use Enterprise Linux 8+, Debian 11+, or Ubuntu 20.04+"
+}
 
+_get_component_selection() {
     # Component selection flags (default: yes)
-    local install_caddy_flag="yes"
-    local install_mariadb_flag="yes"
-    local install_php_flag="yes"
+    install_caddy_flag="yes"
+    install_mariadb_flag="yes"
+    install_php_flag="yes"
 
     # Get user input for component selection
     _info "---------------------------"
@@ -850,7 +894,9 @@ main() {
     _info "MariaDB: $(_green "${install_mariadb_flag}")"
     _info "PHP: $(_green "${install_php_flag}")"
     _info "---------------------------"
+}
 
+_get_version_inputs() {
     # Get version and password inputs based on selection
     if [[ "${install_mariadb_flag}" == "yes" ]]; then
         select_mariadb_version
@@ -865,12 +911,14 @@ main() {
         _info "PHP version: $(_green "${php_ver}")"
         _info "---------------------------"
     fi
+}
 
-    # Confirm installation
+_confirm_installation() {
     _info "Press any key to start installation, or Ctrl+C to cancel"
     get_char > /dev/null
+}
 
-    # System initialization
+_run_system_init() {
     _info "Starting system initialization"
     configure_bbr
     configure_journald
@@ -882,8 +930,9 @@ main() {
     _info "System initialization completed"
     sleep 3
     clear
+}
 
-    # LCMP Installation
+_install_components() {
     _info "Starting LCMP installation"
 
     # Install Caddy
@@ -893,7 +942,7 @@ main() {
     fi
 
     # Install MariaDB
-    local mariadb_cnf=""
+    mariadb_cnf=""
     if [[ "${install_mariadb_flag}" == "yes" ]]; then
         install_mariadb "${mariadb_ver}" mariadb_cnf
         configure_mariadb "${db_pass}" "${mariadb_cnf}"
@@ -904,7 +953,7 @@ main() {
     fi
 
     # Install PHP
-    local php_conf="" php_ini="" php_fpm="" php_sock="" sock_location=""
+    php_conf="" php_ini="" php_fpm="" php_sock="" sock_location=""
     if [[ "${install_php_flag}" == "yes" ]]; then
         install_php "${php_ver}" php_conf php_ini php_fpm php_sock sock_location
     fi
@@ -916,11 +965,7 @@ main() {
 
     # Configure Caddy default configuration file with correct PHP socket
     if [[ "${install_caddy_flag}" == "yes" ]]; then
-        if [[ "${install_php_flag}" == "yes" ]]; then
-            configure_caddy_default_conf "${php_sock}"
-        else
-            configure_caddy_static_conf
-        fi
+        configure_caddy_site_conf "${php_sock}"
     fi
 
     # Install lcmp helper script
@@ -933,8 +978,9 @@ main() {
     if [[ "${install_caddy_flag}" == "yes" ]]; then
         _error_detect "chown -R caddy:caddy /data/www"
     fi
+}
 
-    # Start services & Enable services
+_start_services() {
     _error_detect "systemctl daemon-reload"
     if [[ "${install_php_flag}" == "yes" ]]; then
         _error_detect "systemctl start ${php_fpm}"
@@ -948,10 +994,11 @@ main() {
     if [[ "${install_mariadb_flag}" == "yes" ]]; then
         _error_detect "systemctl enable mariadb"
     fi
-
     pkill -9 gpg-agent 2>/dev/null || true
     sleep 3
-    # Show status
+}
+
+_show_status() {
     echo
     if [[ "${install_mariadb_flag}" == "yes" ]]; then
         _info "systemctl --no-pager -l status mariadb"
@@ -965,7 +1012,6 @@ main() {
         _info "systemctl --no-pager -l status caddy"
         systemctl --no-pager -l status caddy || true
     fi
-
     echo
     _info "netstat -nxtulpe"
     netstat -nxtulpe 2>/dev/null || ss -tunlp
@@ -973,6 +1019,23 @@ main() {
     _info "LCMP installation completed"
     _info "Intro: $(_green "https://github.com/teddysun/lcmp")"
     _info "Log file: ${LOG_FILE}"
+}
+
+#==============================================================================
+# Main Entry Point
+#==============================================================================
+
+main() {
+    _check_prerequisites
+    _show_banner
+    _check_os_support
+    _get_component_selection
+    _get_version_inputs
+    _confirm_installation
+    _run_system_init
+    _install_components
+    _start_services
+    _show_status
 }
 
 # Run main function
