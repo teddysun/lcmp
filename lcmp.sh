@@ -12,24 +12,18 @@ set -uo pipefail
 shopt -s inherit_errexit 2>/dev/null || true
 trap _exit_handler INT QUIT TERM
 
-#==============================================================================
 # Configuration & Constants
-#==============================================================================
 SCRIPT_DIR="$(cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 readonly SCRIPT_DIR
 readonly DEFAULT_DB_PASS="Teddysun.com"
 readonly LOG_FILE="/var/log/lcmp-install.log"
 
-#==============================================================================
 # Color Output Functions
-#==============================================================================
 _red() { printf '\033[1;31m%b\033[0m' "$1"; }
 _green() { printf '\033[1;32m%b\033[0m' "$1"; }
 _yellow() { printf '\033[1;33m%b\033[0m' "$1"; }
 
-#==============================================================================
 # Logging Functions
-#==============================================================================
 _log() {
     local level="$1"
     shift 1
@@ -43,19 +37,13 @@ _info() { _log "INFO" "$@"; }
 _warn() { _log "WARN" "$(_yellow "$@")"; }
 _error() { _log "ERROR" "$(_red "$@")" >&2; exit 2; }
 
-#==============================================================================
 # Signal Handlers
-#==============================================================================
 _exit_handler() {
     printf "\n"
     _red "Script $0 has been terminated."
     printf "\n"
     exit 1
 }
-
-#==============================================================================
-# Utility Functions
-#==============================================================================
 
 # Check if a command exists
 _exists() {
@@ -77,10 +65,6 @@ _version_ge() {
     local ver2="$2"
     printf '%s\n%s\n' "${ver1}" "${ver2}" | sort -rV | head -n1 | grep -qx "${ver1}"
 }
-
-#==============================================================================
-# OS Detection Functions
-#==============================================================================
 
 # Get OS ID from /etc/os-release
 _get_os_id() {
@@ -165,10 +149,6 @@ get_rhel_extra_repo() {
     esac
 }
 
-#==============================================================================
-# System Configuration Functions
-#==============================================================================
-
 # Check kernel version for BBR support
 check_kernel_version() {
     local kernel_version
@@ -194,10 +174,6 @@ get_char() {
     stty "${SAVEDSTTY}"
 }
 
-#==============================================================================
-# Package Installation Abstraction
-#==============================================================================
-
 # Unified package installer
 install_packages() {
     if _check_sys rhel; then
@@ -206,10 +182,6 @@ install_packages() {
         _error_detect "apt-get install -y $*"
     fi
 }
-
-#==============================================================================
-# RHEL Initialization
-#==============================================================================
 
 set_rhel_inputrc() {
     local ver="$1"
@@ -285,10 +257,6 @@ initialize_rhel() {
     fi
 }
 
-#==============================================================================
-# Debian/Ubuntu Initialization
-#==============================================================================
-
 initialize_deb() {
     _error_detect "apt-get update"
     install_packages lsb-release ca-certificates curl gnupg
@@ -304,10 +272,6 @@ initialize_deb() {
     fi
 }
 
-#==============================================================================
-# System Initialization
-#==============================================================================
-
 initialize_system() {
     if _check_sys rhel; then
         initialize_rhel
@@ -317,10 +281,6 @@ initialize_system() {
         _error "Unsupported operating system"
     fi
 }
-
-#==============================================================================
-# BBR Configuration
-#==============================================================================
 
 configure_bbr() {
     if ! check_kernel_version; then
@@ -352,10 +312,6 @@ EOF
     sysctl -p &>/dev/null || _warn "Failed to apply sysctl settings"
     _info "BBR configuration completed"
 }
-
-#==============================================================================
-# Journald Configuration
-#==============================================================================
 
 configure_journald() {
     local journald_config=""
@@ -542,10 +498,6 @@ configure_php_deb() {
     _error_detect "mkdir -m770 /var/lib/php/{session,wsdlcache,opcache}"
 }
 
-#==============================================================================
-# PHP Configuration
-#==============================================================================
-
 configure_php_settings() {
     local php_conf="$1"
     local php_ini="$2"
@@ -662,10 +614,6 @@ EOF
 
     _info "Caddy configuration completed"
 }
-
-#==============================================================================
-# Caddy Site Configuration
-#==============================================================================
 
 configure_caddy_site_conf() {
     local php_sock="${1:-}"
@@ -820,10 +768,6 @@ ask_install_component() {
             var_name="yes" ;;
     esac
 }
-
-#==============================================================================
-# Main Function Phases
-#==============================================================================
 
 _check_prerequisites() {
     # Check root
@@ -990,7 +934,7 @@ _start_services() {
         _error_detect "systemctl start caddy"
         _error_detect "systemctl enable caddy"
     fi
-    # Enable mariadb services
+    # Enable mariadb service
     if [[ "${install_mariadb_flag}" == "yes" ]]; then
         _error_detect "systemctl enable mariadb"
     fi
@@ -1028,10 +972,6 @@ _show_status() {
     _info "Log file: ${LOG_FILE}"
 }
 
-#==============================================================================
-# Main Entry Point
-#==============================================================================
-
 main() {
     _check_prerequisites
     _show_banner
@@ -1045,5 +985,4 @@ main() {
     _show_status
 }
 
-# Run main function
 main "$@"
