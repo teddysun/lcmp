@@ -996,6 +996,13 @@ _start_services() {
     fi
     pkill -9 gpg-agent 2>/dev/null || true
     sleep 3
+    # Restart services
+    if [[ "${install_php_flag}" == "yes" ]]; then
+        _error_detect "systemctl restart ${php_fpm}"
+    fi
+    if [[ "${install_caddy_flag}" == "yes" ]]; then
+        _error_detect "systemctl restart caddy"
+    fi
 }
 
 _show_status() {
