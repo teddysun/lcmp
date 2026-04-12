@@ -88,6 +88,10 @@
 ### Enterprise Linux 8 / 9 / 10
 
 ```bash
+screen -S lcmp
+```
+
+```bash
 dnf -y install wget git
 git clone https://github.com/teddysun/lcmp.git
 cd lcmp
