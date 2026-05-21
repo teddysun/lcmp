@@ -6,7 +6,7 @@
 # Supported OS:
 #   - Enterprise Linux 8/9/10 (CentOS Stream, RHEL, Rocky Linux, AlmaLinux, Oracle Linux)
 #   - Debian 11/12/13
-#   - Ubuntu 20.04/22.04/24.04
+#   - Ubuntu 22.04/24.04
 #
 # Copyright (C) 2023 - 2026 Teddysun <i@teddysun.com>
 set -uo pipefail
@@ -604,7 +604,7 @@ check_env() {
         php_ver="$(/usr/bin/php -v | head -n1 | awk '{print $2}' | cut -d. -f1-2)"
         php_fpm="php${php_ver}-fpm"
     else
-        _error "Unsupported OS. Please use Enterprise Linux 8+, Debian 11+, or Ubuntu 20.04+"
+        _error "Unsupported OS. Please use Enterprise Linux 8+, Debian 11+, or Ubuntu 22.04+"
     fi
 }
 

@@ -5,7 +5,7 @@
 # Supported OS:
 #   - Enterprise Linux 8/9/10 (CentOS Stream, RHEL, Rocky Linux, AlmaLinux, Oracle Linux)
 #   - Debian 11/12/13
-#   - Ubuntu 20.04/22.04/24.04
+#   - Ubuntu 22.04/24.04
 #
 # Copyright (C) 2023 - 2026 Teddysun <i@teddysun.com>
 set -uo pipefail
@@ -805,12 +805,12 @@ _check_os_support() {
         done
     fi
     if _check_sys ubuntu; then
-        for ver in 20.04 22.04 24.04; do
+        for ver in 22.04 24.04; do
             get_ubuntuversion "${ver}" && supported="true" && break
         done
     fi
 
-    [[ "${supported}" == "false" ]] && _error "Unsupported OS. Please use Enterprise Linux 8+, Debian 11+, or Ubuntu 20.04+"
+    [[ "${supported}" == "false" ]] && _error "Unsupported OS. Please use Enterprise Linux 8+, Debian 11+, or Ubuntu 22.04+"
 }
 
 _get_component_selection() {

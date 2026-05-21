@@ -50,7 +50,7 @@
 |-------------|----------|
 | **Enterprise Linux** | 8 / 9 / 10 (CentOS Stream, RHEL, Rocky Linux, AlmaLinux, Oracle Linux) |
 | **Debian** | 11 / 12 / 13 |
-| **Ubuntu** | 20.04 / 22.04 / 24.04 |
+| **Ubuntu** | 22.04 / 24.04 |
 
 ---
 
@@ -95,7 +95,7 @@ chmod +x *.sh
 ./lcmp.sh
 ```
 
-### Debian 11 ~ 13 / Ubuntu 20.04 ~ 24.04
+### Debian 11 ~ 13 / Ubuntu 22.04 ~ 24.04
 
 ```bash
 apt-get -y install wget git
@@ -127,7 +127,7 @@ chown root:caddy /var/lib/php/{session,wsdlcache,opcache}
 dnf module switch-to php:remi-8.4
 ```
 
-### Debian 11 ~ 13 / Ubuntu 20.04 ~ 24.04
+### Debian 11 ~ 13 / Ubuntu 22.04 ~ 24.04
 
 ```bash
 # Upgrade individual components
@@ -151,7 +151,7 @@ dnf remove -y MariaDB-*
 dnf remove -y php-*
 ```
 
-### Debian 11 ~ 13 / Ubuntu 20.04 ~ 24.04
+### Debian 11 ~ 13 / Ubuntu 22.04 ~ 24.04
 
 ```bash
 apt-get remove -y caddy
